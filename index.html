@@ -311,13 +311,21 @@
       display: inline-grid;
       font-size: calc(clamp(4rem, 15vw, 12rem) * var(--timer-scale));
       line-height: 1;
+      grid-template-columns: 0.84em auto 0.84em;
+      gap: 0.12em;
+      align-items: stretch;
+      transform: translateZ(0);
+    }
+
+    #totalTimerReadout {
+      position: relative;
+      display: inline-grid;
       grid-template-columns: 1.1ch auto 1.1ch;
       align-items: baseline;
-      transform: translateZ(0);
       isolation: isolate;
     }
 
-    #totalTimerWrapper::after {
+    #totalTimerReadout::after {
       content: '\00a0';
       grid-column: 3;
       visibility: hidden;
@@ -349,36 +357,31 @@
     #totalTimer { grid-column: 2; }
 
     .timer-signal {
-      position: absolute;
-      inset: -8px -28px;
+      position: relative;
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
+      align-items: center;
       justify-content: center;
-      gap: 0.14em;
-      padding: 0 clamp(18px, 3vw, 34px);
+      width: 0.84em;
+      min-width: 0.84em;
+      min-height: 1.02em;
       border-radius: 12px;
-      background: color-mix(in srgb, #facc15 18%, transparent);
-      color: color-mix(in srgb, #facc15 86%, #231600);
-      opacity: 0;
+      background-color: transparent;
+      color: rgba(255, 255, 255, 0.18);
+      opacity: 0.28;
       pointer-events: none;
       transform-origin: center;
       overflow: hidden;
-      transition: opacity 180ms var(--ease-out-quart), transform 180ms var(--ease-out-quart);
-      z-index: 1;
+      transition: opacity 180ms var(--ease-out-quart), transform 180ms var(--ease-out-quart), color 180ms var(--ease-out-quart), background-color 180ms var(--ease-out-quart);
+      align-self: stretch;
     }
 
     .timer-signal--prev {
-      justify-content: center;
-      align-items: flex-start;
-      text-align: left;
+      grid-column: 1;
       transform: scale(0.985);
     }
 
     .timer-signal--next {
-      justify-content: center;
-      align-items: flex-end;
-      text-align: right;
+      grid-column: 3;
       transform: scale(0.985);
     }
 
@@ -395,19 +398,13 @@
     }
 
     .timer-signal__name {
-      max-width: 8.4rem;
-      font-size: clamp(0.5rem, 0.82vw, 0.66rem);
-      line-height: 1;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: color-mix(in srgb, currentColor 38%, transparent);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      display: none;
     }
 
     .timer-signal.active {
       opacity: 1;
+      background-color: rgba(250, 204, 21, 0.16);
+      color: rgb(250, 204, 21);
     }
 
     .timer-signal--prev.active {
@@ -420,35 +417,35 @@
 
     @keyframes timerSignalPulsePrev {
       0% {
-        opacity: 0;
-        transform: scale(0.972);
+        opacity: 0.3;
+        transform: translateX(0.08em) scale(0.96);
       }
       55% {
         opacity: 1;
         transform: scale(1);
       }
       100% {
-        opacity: 0.82;
+        opacity: 0.74;
         transform: scale(0.995);
       }
     }
 
     @keyframes timerSignalPulseNext {
       0% {
-        opacity: 0;
-        transform: scale(0.972);
+        opacity: 0.3;
+        transform: translateX(-0.08em) scale(0.96);
       }
       55% {
         opacity: 1;
         transform: scale(1);
       }
       100% {
-        opacity: 0.82;
+        opacity: 0.74;
         transform: scale(0.995);
       }
     }
 
-    .alerting #totalTimerWrapper {
+    .alerting #totalTimerReadout {
       animation: timerAlertBlink 0.95s var(--ease-out-quart) infinite;
     }
 
@@ -524,11 +521,11 @@
       50% { opacity: 0.16; }
     }
 
-    .overtime #totalTimerWrapper {
+    .overtime #totalTimerReadout {
       position: relative;
     }
 
-    .overtime #totalTimerWrapper::before {
+    .overtime #totalTimerReadout::before {
       content: '';
       position: absolute;
       inset: -8px -28px;
@@ -548,8 +545,13 @@
 
     .danger .timer-signal,
     .overtime .timer-signal {
-      background: color-mix(in srgb, #facc15 22%, transparent);
-      color: color-mix(in srgb, #facc15 88%, #231600);
+      color: rgba(255, 255, 255, 0.16);
+    }
+
+    .danger .timer-signal.active,
+    .overtime .timer-signal.active {
+      background-color: rgba(250, 204, 21, 0.18);
+      color: rgb(250, 204, 21);
     }
 
     .overtime-label {
@@ -1202,8 +1204,14 @@
       }
 
       .timer-signal {
-        inset: -6px -14px;
-        padding: 0 16px;
+        width: 0.78em;
+        min-width: 0.78em;
+        min-height: 1em;
+      }
+
+      #totalTimerWrapper {
+        grid-template-columns: 0.78em auto 0.78em;
+        gap: 0.08em;
       }
 
       .team-signal-actions {
@@ -1870,8 +1878,10 @@
         </svg>
         <span id="timerSignalPrevName" class="timer-signal__name"></span>
       </div>
-      <span id="totalTimerSign" aria-hidden="true">&nbsp;</span>
-      <span id="totalTimer">30:00</span>
+      <div id="totalTimerReadout">
+        <span id="totalTimerSign" aria-hidden="true">&nbsp;</span>
+        <span id="totalTimer">30:00</span>
+      </div>
       <div id="timerSignalNext" class="timer-signal timer-signal--next" aria-hidden="true">
         <svg class="timer-signal__icon" viewBox="0 0 16 16">
           <path d="m5.5 3.5 5 4.5-5 4.5"></path>
