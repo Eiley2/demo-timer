@@ -1420,7 +1420,6 @@
         return;
       }
       const params = new URLSearchParams({ [ROOM_PARAM]: collab.roomId });
-      if (collab.hostToken && collab.role === 'host') params.set(HOST_PARAM, collab.hostToken);
       const link = `${location.origin}${location.pathname}?${params.toString()}`;
       el.roomLinkField.value = link;
       el.copyRoomBtn.disabled = false;
@@ -1452,7 +1451,11 @@
     }
 
     function canSendToServer() {
-      return collab.connected && collab.socket && collab.socket.readyState === WebSocket.OPEN;
+      return collab.socket && collab.socket.readyState === WebSocket.OPEN;
+    }
+
+    function isJoiningRoom() {
+      return !!collab.socket && collab.socket.readyState === WebSocket.CONNECTING;
     }
 
     function sendToServer(payload) {
@@ -1556,6 +1559,7 @@
     function connectToRoom(roomId) {
       if (collab.socket) {
         try { collab.socket.close(); } catch (_e) {}
+        collab.socket = null;
       }
       collab.manualClose = false;
       collab.socket = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/rooms/${encodeURIComponent(roomId)}/ws`);
@@ -1586,6 +1590,7 @@
       });
       collab.socket.addEventListener('close', () => {
         collab.connected = false;
+        collab.socket = null;
         collab.role = 'guest';
         collab.permissions = {
           guestCanPlay: true,
@@ -2071,7 +2076,11 @@
 
     /* ── Timer logic ── */
     function startTimer() {
-      if (collab.connected && sendAction('start')) return;
+      if (isJoiningRoom()) {
+        setTeamStatus('Esperando conexión en tiempo real...');
+        return;
+      }
+      if (collab.roomId && sendAction('start')) return;
       if (state.completed) return;
       const sections = parseSections();
       if (sections.length === 0) return;
@@ -2091,7 +2100,11 @@
     }
 
     function pauseTimer() {
-      if (collab.connected && sendAction('pause')) return;
+      if (isJoiningRoom()) {
+        setTeamStatus('Esperando conexión en tiempo real...');
+        return;
+      }
+      if (collab.roomId && sendAction('pause')) return;
       if (!state.running) return;
       state.currentMs = Math.max(0, state.currentMs - (Date.now() - state.currentStart));
       state.running = false;
@@ -2103,7 +2116,11 @@
     }
 
     function resetTimer() {
-      if (collab.connected && sendAction('reset')) return;
+      if (isJoiningRoom()) {
+        setTeamStatus('Esperando conexión en tiempo real...');
+        return;
+      }
+      if (collab.roomId && sendAction('reset')) return;
       clearInterval(state.timer);
       Object.assign(state, {
         timer: null,
@@ -2123,7 +2140,11 @@
     }
 
     function nextSection() {
-      if (collab.connected && sendAction('next')) return;
+      if (isJoiningRoom()) {
+        setTeamStatus('Esperando conexión en tiempo real...');
+        return;
+      }
+      if (collab.roomId && sendAction('next')) return;
       const sections = parseSections();
       if (state.currentIndex < sections.length - 1) {
         state.currentIndex += 1;
