@@ -56,6 +56,12 @@ function createRoomSnapshot(init = {}) {
     currentIndex: 0,
     currentMs: toSectionMs(fallbackSections[0]),
     currentStart: 0,
+    zeroHold: false,
+    zeroHoldStart: 0,
+    zeroHoldElapsed: 0,
+    overtime: false,
+    overtimeStart: 0,
+    overtimeElapsed: 0,
     version: 0,
     configVersion: 0,
     tickIntervalMs: 220
@@ -82,6 +88,12 @@ function cloneForClient(roomState) {
     currentIndex: roomState.currentIndex,
     currentMs: roomState.currentMs,
     currentStart: roomState.currentStart,
+    zeroHold: !!roomState.zeroHold,
+    zeroHoldStart: roomState.zeroHoldStart || 0,
+    zeroHoldElapsed: roomState.zeroHoldElapsed || 0,
+    overtime: !!roomState.overtime,
+    overtimeStart: roomState.overtimeStart || 0,
+    overtimeElapsed: roomState.overtimeElapsed || 0,
     version: roomState.version,
     configVersion: roomState.configVersion,
     tickIntervalMs: roomState.tickIntervalMs
@@ -109,11 +121,14 @@ class SyncRoom {
     if (persisted) {
       this.rooms = { ...this.rooms, ...persisted };
     }
+    this.rooms.roomState = { ...createRoomSnapshot(this.rooms.roomState), ...this.rooms.roomState };
     if (!Array.isArray(this.rooms.roomState.sections) || this.rooms.roomState.sections.length === 0) {
       this.rooms.roomState = createRoomSnapshot(this.rooms.roomState);
     }
     this.rooms.isReady = true;
-    if (this.rooms.roomState.running) this.startTicker();
+    if (this.rooms.roomState.running && (this.rooms.roomState.zeroHold || !this.rooms.roomState.overtime)) {
+      this.startTicker();
+    }
   }
 
   firstPlayableIndex(fromIndex = 0) {
@@ -324,6 +339,12 @@ class SyncRoom {
     this.rooms.roomState.currentIndex = 0;
     this.rooms.roomState.currentMs = toSectionMs(next.sections[0]);
     this.rooms.roomState.currentStart = 0;
+    this.rooms.roomState.zeroHold = false;
+    this.rooms.roomState.zeroHoldStart = 0;
+    this.rooms.roomState.zeroHoldElapsed = 0;
+    this.rooms.roomState.overtime = false;
+    this.rooms.roomState.overtimeStart = 0;
+    this.rooms.roomState.overtimeElapsed = 0;
     this.rooms.roomState.version += 1;
     this.rooms.roomState.configVersion += 1;
     this.rooms.roomState.tickIntervalMs = 220;
@@ -336,8 +357,28 @@ class SyncRoom {
   startTimer(_connectionId) {
     const roomState = this.rooms.roomState;
     if (!roomState.sections.length) return;
-    if (roomState.completed) this.resetSession();
+    if (roomState.completed && !roomState.overtime) this.resetSession();
     if (roomState.running) {
+      this.broadcastState();
+      return;
+    }
+
+    if (roomState.zeroHold) {
+      roomState.zeroHoldStart = Date.now() - Math.max(0, Number(roomState.zeroHoldElapsed) || 0);
+      roomState.running = true;
+      roomState.version += 1;
+      this.persist();
+      this.startTicker();
+      this.broadcastState();
+      return;
+    }
+
+    if (roomState.overtime) {
+      roomState.overtimeStart = Date.now() - Math.max(0, Number(roomState.overtimeElapsed) || 0);
+      roomState.running = true;
+      roomState.version += 1;
+      this.persist();
+      this.stopTicker();
       this.broadcastState();
       return;
     }
@@ -374,8 +415,14 @@ class SyncRoom {
   pauseTimer() {
     const roomState = this.rooms.roomState;
     if (!roomState.running) return;
-    roomState.currentMs = Math.max(0, roomState.currentMs - (Date.now() - roomState.currentStart));
-    roomState.currentStart = 0;
+    if (roomState.zeroHold) {
+      roomState.zeroHoldElapsed = Date.now() - roomState.zeroHoldStart;
+    } else if (roomState.overtime) {
+      roomState.overtimeElapsed = Date.now() - roomState.overtimeStart;
+    } else {
+      roomState.currentMs = Math.max(0, roomState.currentMs - (Date.now() - roomState.currentStart));
+      roomState.currentStart = 0;
+    }
     roomState.running = false;
     roomState.version += 1;
     this.stopTicker();
@@ -385,8 +432,9 @@ class SyncRoom {
 
   nextSection() {
     const roomState = this.rooms.roomState;
+    if (roomState.zeroHold || roomState.overtime) return;
     if (roomState.currentIndex >= roomState.sections.length - 1) {
-      this.finishSession();
+      this.enterZeroHold();
       return;
     }
     roomState.currentIndex += 1;
@@ -404,6 +452,12 @@ class SyncRoom {
     roomState.currentIndex = 0;
     roomState.currentMs = this.sectionMs(0);
     roomState.currentStart = 0;
+    roomState.zeroHold = false;
+    roomState.zeroHoldStart = 0;
+    roomState.zeroHoldElapsed = 0;
+    roomState.overtime = false;
+    roomState.overtimeStart = 0;
+    roomState.overtimeElapsed = 0;
     roomState.lastSectionIndex = -1;
     roomState.version += 1;
     this.stopTicker();
@@ -413,13 +467,41 @@ class SyncRoom {
 
   finishSession() {
     const roomState = this.rooms.roomState;
-    roomState.running = false;
+    const expiredAt = roomState.zeroHold
+      ? (roomState.zeroHoldStart + 1000)
+      : ((roomState.currentStart || Date.now()) + (roomState.currentMs || 0));
     roomState.completed = true;
+    roomState.zeroHold = false;
+    roomState.zeroHoldStart = 0;
+    roomState.zeroHoldElapsed = 0;
+    roomState.overtime = true;
+    roomState.overtimeStart = expiredAt || Date.now();
+    roomState.overtimeElapsed = 0;
     roomState.currentIndex = roomState.sections.length;
     roomState.currentMs = 0;
     roomState.currentStart = 0;
     roomState.version += 1;
     this.stopTicker();
+    this.persist();
+    this.broadcastState();
+  }
+
+  enterZeroHold(expiredElapsed = 0) {
+    const roomState = this.rooms.roomState;
+    const safeElapsed = Math.max(0, Number(expiredElapsed) || 0);
+    roomState.completed = false;
+    roomState.zeroHold = true;
+    roomState.zeroHoldStart = Date.now() - safeElapsed;
+    roomState.zeroHoldElapsed = safeElapsed;
+    roomState.overtime = false;
+    roomState.overtimeStart = 0;
+    roomState.overtimeElapsed = 0;
+    roomState.currentIndex = Math.min(Math.max(0, roomState.currentIndex), Math.max(0, roomState.sections.length - 1));
+    roomState.currentMs = 0;
+    roomState.currentStart = 0;
+    roomState.version += 1;
+    if (roomState.running) this.startTicker();
+    else this.stopTicker();
     this.persist();
     this.broadcastState();
   }
@@ -444,6 +526,17 @@ class SyncRoom {
   tick() {
     const roomState = this.rooms.roomState;
     if (!roomState.running) {
+      this.stopTicker();
+      return;
+    }
+    if (roomState.zeroHold) {
+      const zeroElapsed = Date.now() - roomState.zeroHoldStart;
+      if (zeroElapsed >= 1000) {
+        this.finishSession();
+      }
+      return;
+    }
+    if (roomState.overtime) {
       this.stopTicker();
       return;
     }
@@ -484,7 +577,8 @@ class SyncRoom {
 
       overshoot -= nextRemaining;
       if (nextIndex >= roomState.sections.length - 1) {
-        this.finishSession();
+        roomState.currentIndex = nextIndex;
+        this.enterZeroHold(overshoot);
         return;
       }
 

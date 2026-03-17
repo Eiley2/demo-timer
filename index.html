@@ -1449,6 +1449,87 @@
       vertical-align: 1px;
     }
 
+    @media (max-width: 860px) and (orientation: portrait) {
+      body {
+        min-height: 100dvh;
+        height: auto;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+      .bar-area {
+        flex-shrink: 0;
+      }
+
+      .timer-area {
+        flex: none;
+        min-height: auto;
+        justify-content: flex-start;
+        padding: 20px 20px 28px;
+      }
+
+      .config {
+        height: auto;
+        min-height: 0;
+        max-height: none;
+        overflow: visible;
+        gap: 22px;
+        padding-bottom: 28px;
+      }
+
+      .config-col {
+        overflow: visible;
+        min-height: auto;
+      }
+
+      .segments-scroll {
+        overflow: visible;
+        flex: none;
+        min-height: auto;
+        max-height: none;
+      }
+
+      .list-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .list-footer-actions {
+        flex-wrap: wrap;
+      }
+
+      .guide {
+        margin-top: 12px !important;
+      }
+    }
+
+    @media (max-width: 480px) and (orientation: portrait) {
+      .timer-area {
+        padding: 16px 16px 22px;
+      }
+
+      .config {
+        max-width: none;
+        gap: 20px;
+        padding: 0 16px 24px;
+        padding-top: 18px;
+      }
+
+      .config-col {
+        gap: 14px;
+      }
+
+      .section-list-header,
+      .section-row {
+        grid-template-columns: 18px minmax(0, 1fr) 52px 30px 24px;
+      }
+
+      .section-row input {
+        min-width: 0;
+      }
+    }
+
     /* ── Edit toggle (while running) ── */
     .edit-toggle {
       position: fixed;
@@ -1505,6 +1586,10 @@
       <div class="team-live-header">
         <span id="teamLiveStatus" class="team-live-dot"></span>
         <span class="team-live-label">Conectado</span>
+      </div>
+      <div class="team-row">
+        <label for="memberNameLiveInput">Tu alias</label>
+        <input id="memberNameLiveInput" type="text" maxlength="32" placeholder="Ej: Norte 42" />
       </div>
       <div class="team-link-row">
         <input id="roomLinkField" class="room-link-field" type="text" readonly value="" aria-label="Link de la sesión" />
@@ -1734,6 +1819,7 @@
       teamPanel: document.getElementById('teamPanel'),
       teamCloseBtn: document.getElementById('teamCloseBtn'),
       memberNameInput: document.getElementById('memberNameInput'),
+      memberNameLiveInput: document.getElementById('memberNameLiveInput'),
       shareRoomBtn: document.getElementById('shareRoomBtn'),
       copyRoomBtn: document.getElementById('copyRoomBtn'),
       leaveRoomBtn: document.getElementById('leaveRoomBtn'),
@@ -1976,6 +2062,25 @@
       });
 
       syncPanelState();
+      syncConfigAccess();
+    }
+
+    function syncConfigAccess() {
+      const isHost = collab.role === 'host';
+      const canEdit = isHost || !collab.connected || !!collab.permissions.guestCanEdit;
+
+      if (!canEdit) {
+        el.configPanel.classList.add('hidden');
+        el.editToggle.classList.add('hidden');
+        return;
+      }
+
+      if (state.running) {
+        el.editToggle.classList.remove('hidden');
+      } else {
+        el.configPanel.classList.remove('hidden');
+        el.editToggle.classList.add('hidden');
+      }
     }
 
     function updateRoomLink() {
@@ -2033,6 +2138,7 @@
       collab.profile.name = normalizeProfileName(nameInput || collab.profile.name, collab.profile.iconSeed);
       saveProfile(collab.profile);
       if (el.memberNameInput && el.memberNameInput.value !== collab.profile.name) el.memberNameInput.value = collab.profile.name;
+      if (el.memberNameLiveInput && el.memberNameLiveInput.value !== collab.profile.name) el.memberNameLiveInput.value = collab.profile.name;
       if (canSendToServer()) {
         sendToServer({ type: 'profile', profile: collab.profile });
       }
@@ -2040,6 +2146,7 @@
 
     function syncProfileToPanel() {
       if (el.memberNameInput) el.memberNameInput.value = collab.profile.name;
+      if (el.memberNameLiveInput) el.memberNameLiveInput.value = collab.profile.name;
     }
 
     function createRoomConfigPayload() {
@@ -2192,6 +2299,9 @@
       Object.assign(state, {
         running: !!roomState.running,
         completed: !!roomState.completed,
+        zeroHold: !!roomState.zeroHold,
+        zeroHoldStart: Number(roomState.zeroHoldStart) || 0,
+        zeroHoldElapsed: Number(roomState.zeroHoldElapsed) || 0,
         overtime: !!roomState.overtime,
         overtimeStart: Number(roomState.overtimeStart) || 0,
         overtimeElapsed: Number(roomState.overtimeElapsed) || 0,
@@ -2299,6 +2409,11 @@
     }
 
     function setTimerDisplay(valueText, valueMs, { negative = false } = {}) {
+      if (el.totalTimer?._numberRaf) {
+        cancelAnimationFrame(el.totalTimer._numberRaf);
+        el.totalTimer._numberRaf = null;
+      }
+      el.totalTimer?.classList.remove('number-transition');
       if (el.totalTimerSign) el.totalTimerSign.innerHTML = negative ? '&minus;' : '&nbsp;';
       el.totalTimer.textContent = valueText;
       el.totalTimer.dataset.valueMs = String(Math.max(0, Number(valueMs) || 0));
@@ -2378,17 +2493,25 @@
     /* ── Layout modes ── */
     function enterRunningMode() {
       el.configPanel.classList.add('hidden');
-      el.editToggle.classList.remove('hidden');
+      syncConfigAccess();
       updateRunningClass();
     }
 
     function exitRunningMode() {
+      syncConfigAccess();
+      if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) {
+        updateRunningClass();
+        return;
+      }
       el.configPanel.classList.remove('hidden');
       el.editToggle.classList.add('hidden');
       updateRunningClass();
     }
 
-    el.editToggle.addEventListener('click', exitRunningMode);
+    el.editToggle.addEventListener('click', () => {
+      if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) return;
+      exitRunningMode();
+    });
 
 
     /* ── Collapsibles ── */
@@ -3032,6 +3155,10 @@
     });
     el.memberNameInput?.addEventListener('input', () => {
       updateRoomProfile(el.memberNameInput.value);
+      setTeamStatus(`Nombre guardado: ${collab.profile.name}`);
+    });
+    el.memberNameLiveInput?.addEventListener('input', () => {
+      updateRoomProfile(el.memberNameLiveInput.value);
       setTeamStatus(`Nombre guardado: ${collab.profile.name}`);
     });
     el.shareRoomBtn?.addEventListener('click', async () => {
