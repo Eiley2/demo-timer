@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
   <title id="title">Demo Timer Favicon</title>
   <desc id="desc">Cronómetro minimalista para Demo Timer</desc>
-  <rect width="256" height="256" rx="44" fill="#000000" />
+<rect width="256" height="256" rx="0" fill="#000000" />
   <circle cx="128" cy="128" r="86" fill="none" stroke="#ffffff" stroke-width="18" />
   <path d="M128 56v24M128 176v24M56 128h24M176 128h24" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.85" />
   <line x1="128" y1="128" x2="128" y2="80" stroke="#ffffff" stroke-width="14" stroke-linecap="round">
