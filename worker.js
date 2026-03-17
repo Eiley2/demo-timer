@@ -2,6 +2,7 @@ const DEFAULT_PERMISSIONS = {
   guestCanPlay: true,
   guestCanNext: true,
   guestCanReset: true,
+  guestCanSignal: true,
   guestCanEdit: true
 };
 
@@ -287,6 +288,7 @@ class SyncRoom {
     else if (action === "pause") this.pauseTimer(connectionId);
     else if (action === "next") this.nextSection();
     else if (action === "reset") this.resetSession();
+    else if (action === "signal") this.emitSignal(connectionId, payload.payload || {});
     else if (action === "applyConfig") this.applyConfig(payload.payload || {});
     else this.send(connectionId, { type: "error", code: "bad_action", message: "Acción no válida." });
   }
@@ -296,6 +298,7 @@ class SyncRoom {
     if (action === "start" || action === "pause") return !!perms.guestCanPlay;
     if (action === "next") return !!perms.guestCanNext;
     if (action === "reset") return !!perms.guestCanReset;
+    if (action === "signal") return !!perms.guestCanSignal;
     if (action === "applyConfig") return !!perms.guestCanEdit;
     return false;
   }
@@ -311,11 +314,34 @@ class SyncRoom {
       guestCanPlay: !!perms.guestCanPlay,
       guestCanNext: !!perms.guestCanNext,
       guestCanReset: !!perms.guestCanReset,
+      guestCanSignal: !!perms.guestCanSignal,
       guestCanEdit: !!perms.guestCanEdit
     };
     this.rooms.roomState.version += 1;
     this.persist();
     this.broadcastState();
+  }
+
+  emitSignal(connectionId, payload = {}) {
+    const socket = this.sockets.get(connectionId);
+    if (!socket) return;
+    const direction = payload.direction === "prev" ? "prev" : payload.direction === "next" ? "next" : "";
+    if (!direction) {
+      this.send(connectionId, { type: "error", code: "bad_signal", message: "Señal no válida." });
+      return;
+    }
+
+    const signal = {
+      id: crypto.randomUUID(),
+      direction,
+      senderName: sanitizeProfile(socket.profile || {}).name,
+      createdAt: Date.now()
+    };
+
+    this.broadcast({
+      type: "signal",
+      signal
+    });
   }
 
   applyConfig(payload = {}) {
@@ -619,6 +645,15 @@ class SyncRoom {
       if (!socket || socket.readyState !== WebSocket.OPEN) continue;
       const role = this.rooms.members[id]?.role || "guest";
       socket.send(JSON.stringify({ ...statePayload, role }));
+    }
+  }
+
+  broadcast(payload) {
+    const message = JSON.stringify(payload);
+    for (const [id] of this.sockets) {
+      const socket = this.sockets.get(id)?.socket;
+      if (!socket || socket.readyState !== WebSocket.OPEN) continue;
+      socket.send(message);
     }
   }
 

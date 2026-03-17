@@ -345,6 +345,105 @@
 
     #totalTimer { grid-column: 2; }
 
+    .timer-signal {
+      position: absolute;
+      top: 50%;
+      width: 0.92em;
+      height: 0.98em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.08em;
+      border-radius: 0.16em;
+      border: 1px solid color-mix(in srgb, var(--color-timer) 12%, transparent);
+      background: color-mix(in srgb, var(--color-timer) 8%, #07090b);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+      color: color-mix(in srgb, var(--color-timer) 88%, #13171b);
+      opacity: 0;
+      pointer-events: none;
+      transform-origin: center;
+      overflow: hidden;
+      transition: opacity 180ms var(--ease-out-quart), transform 180ms var(--ease-out-quart);
+    }
+
+    .timer-signal--prev {
+      left: calc(-0.92em - 0.16em);
+      transform: translateY(-50%);
+    }
+
+    .timer-signal--next {
+      right: calc(-0.92em - 0.16em);
+      transform: translateY(-50%);
+    }
+
+    .timer-signal__icon {
+      width: 0.34em;
+      height: 0.34em;
+      flex: none;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      opacity: 0.94;
+    }
+
+    .timer-signal__name {
+      max-width: 5.2rem;
+      font-size: clamp(0.54rem, 0.92vw, 0.72rem);
+      line-height: 1;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, currentColor 44%, transparent);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-inline: 0.4rem;
+    }
+
+    .timer-signal.active {
+      opacity: 1;
+    }
+
+    .timer-signal--prev.active {
+      animation: timerSignalPulsePrev 1.45s var(--ease-out-expo) both;
+    }
+
+    .timer-signal--next.active {
+      animation: timerSignalPulseNext 1.45s var(--ease-out-expo) both;
+    }
+
+    @keyframes timerSignalPulsePrev {
+      0% {
+        opacity: 0;
+        transform: translateY(-50%) translateX(0.22em) scale(0.88);
+      }
+      24% {
+        opacity: 1;
+        transform: translateY(-50%) translateX(-0.04em) scale(1.02);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0) scale(1);
+      }
+    }
+
+    @keyframes timerSignalPulseNext {
+      0% {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-0.22em) scale(0.88);
+      }
+      24% {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0.04em) scale(1.02);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0) scale(1);
+      }
+    }
+
     .alerting #totalTimerWrapper {
       animation: timerAlertBlink 0.95s var(--ease-out-quart) infinite;
     }
@@ -440,6 +539,13 @@
     .overtime #totalTimer,
     .overtime #totalTimerSign {
       color: var(--color-danger);
+    }
+
+    .danger .timer-signal,
+    .overtime .timer-signal {
+      border-color: color-mix(in srgb, var(--color-danger) 14%, transparent);
+      background: color-mix(in srgb, var(--color-danger) 9%, #07090b);
+      color: color-mix(in srgb, var(--color-danger) 84%, #170809);
     }
 
     .overtime-label {
@@ -889,6 +995,65 @@
       letter-spacing: 0;
     }
 
+    .team-signal-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .team-signal-btn {
+      min-height: 42px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: #0d1013;
+      color: rgba(255,255,255,0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font: inherit;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 160ms var(--ease-out-quart), color 160ms var(--ease-out-quart), transform 90ms var(--ease-out-quart), background-color 160ms var(--ease-out-quart);
+      transform: translateZ(0);
+    }
+
+    .team-signal-btn:hover {
+      border-color: rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.92);
+      background: #101419;
+    }
+
+    .team-signal-btn:active,
+    .team-signal-btn.is-pressed {
+      transform: scale(0.98);
+    }
+
+    .team-signal-btn:disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .team-signal-btn svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      flex: none;
+    }
+
+    .team-signal-hint {
+      margin: 0;
+      font-size: 0.66rem;
+      line-height: 1.45;
+      color: rgba(255,255,255,0.36);
+    }
+
     .team-leave-btn {
       width: 100%;
       min-height: 32px;
@@ -1030,6 +1195,23 @@
         padding: 0 16px 20px;
         padding-top: 20px;
         gap: 24px;
+      }
+
+      .timer-signal {
+        width: 0.84em;
+        height: 0.92em;
+      }
+
+      .timer-signal--prev {
+        left: calc(-0.84em - 0.1em);
+      }
+
+      .timer-signal--next {
+        right: calc(-0.84em - 0.1em);
+      }
+
+      .team-signal-actions {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -1564,6 +1746,10 @@
     .edit-toggle.hidden { display: none; }
 
     @media (prefers-reduced-motion: reduce) {
+      .timer-signal.active {
+        animation: none !important;
+      }
+
       * {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
@@ -1618,6 +1804,25 @@
       <p id="teamStatus" class="team-status"></p>
     </div>
 
+    <div id="teamSignalsSection" class="team-panel-section" style="display:none">
+      <div class="team-section-title">Sugerir cambio</div>
+      <div class="team-signal-actions">
+        <button id="signalPrevBtn" class="team-signal-btn" type="button" aria-label="Sugerir volver a la sección anterior">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M10.5 3.5 5.5 8l5 4.5"></path>
+          </svg>
+          <span>Volver</span>
+        </button>
+        <button id="signalNextBtn" class="team-signal-btn" type="button" aria-label="Sugerir avanzar a la siguiente sección">
+          <span>Avanzar</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="m5.5 3.5 5 4.5-5 4.5"></path>
+          </svg>
+        </button>
+      </div>
+      <p class="team-signal-hint">Envía una sugerencia sutil al host sin cambiar el timer.</p>
+    </div>
+
     <div id="teamMembersSection" class="team-panel-section" style="display:none">
       <div class="team-section-title">Participantes</div>
       <div id="teamMembers" class="team-members" aria-label="Participantes conectados"></div>
@@ -1628,6 +1833,7 @@
       <label><input id="permPlayInput" type="checkbox" checked>Iniciar / pausar</label>
       <label><input id="permNextInput" type="checkbox" checked>Siguiente sección</label>
       <label><input id="permResetInput" type="checkbox" checked>Reiniciar</label>
+      <label><input id="permSignalInput" type="checkbox" checked>Enviar señales</label>
       <label><input id="permEditInput" type="checkbox" checked>Editar config</label>
     </div>
 
@@ -1661,7 +1867,22 @@
   <!-- Center: timer -->
   <main class="timer-area" id="displayPanel" role="main" aria-live="polite">
     <div class="session-name" id="sessionTitle">Demo</div>
-    <div id="totalTimerWrapper"><span id="totalTimerSign" aria-hidden="true">&nbsp;</span><span id="totalTimer">30:00</span></div>
+    <div id="totalTimerWrapper">
+      <div id="timerSignalPrev" class="timer-signal timer-signal--prev" aria-hidden="true">
+        <svg class="timer-signal__icon" viewBox="0 0 16 16">
+          <path d="M10.5 3.5 5.5 8l5 4.5"></path>
+        </svg>
+        <span id="timerSignalPrevName" class="timer-signal__name"></span>
+      </div>
+      <span id="totalTimerSign" aria-hidden="true">&nbsp;</span>
+      <span id="totalTimer">30:00</span>
+      <div id="timerSignalNext" class="timer-signal timer-signal--next" aria-hidden="true">
+        <svg class="timer-signal__icon" viewBox="0 0 16 16">
+          <path d="m5.5 3.5 5 4.5-5 4.5"></path>
+        </svg>
+        <span id="timerSignalNextName" class="timer-signal__name"></span>
+      </div>
+    </div>
 
     <div class="section-context" id="sectionContext">
       <div class="section-now" id="sectionNow"></div>
@@ -1841,17 +2062,25 @@
       roomLinkField: document.getElementById('roomLinkField'),
       teamStatus: document.getElementById('teamStatus'),
       teamMembers: document.getElementById('teamMembers'),
+      teamSignalsSection: document.getElementById('teamSignalsSection'),
       permissionsPanel: document.getElementById('teamPermissionsPanel'),
       permPlayInput: document.getElementById('permPlayInput'),
       permNextInput: document.getElementById('permNextInput'),
       permResetInput: document.getElementById('permResetInput'),
+      permSignalInput: document.getElementById('permSignalInput'),
       permEditInput: document.getElementById('permEditInput'),
+      signalPrevBtn: document.getElementById('signalPrevBtn'),
+      signalNextBtn: document.getElementById('signalNextBtn'),
       teamIdle: document.getElementById('teamIdle'),
       teamLive: document.getElementById('teamLive'),
       teamLiveStatus: document.getElementById('teamLiveStatus'),
       teamLiveLabel: document.querySelector('.team-live-label'),
       teamMembersSection: document.getElementById('teamMembersSection'),
-      teamLeaveSection: document.getElementById('teamLeaveSection')
+      teamLeaveSection: document.getElementById('teamLeaveSection'),
+      timerSignalPrev: document.getElementById('timerSignalPrev'),
+      timerSignalPrevName: document.getElementById('timerSignalPrevName'),
+      timerSignalNext: document.getElementById('timerSignalNext'),
+      timerSignalNextName: document.getElementById('timerSignalNextName')
     };
 
     const state = {
@@ -1893,8 +2122,14 @@
         guestCanPlay: true,
         guestCanNext: true,
         guestCanReset: true,
+        guestCanSignal: true,
         guestCanEdit: true
       }
+    };
+    const signalState = {
+      id: '',
+      direction: '',
+      timer: null
     };
 
     function hashFromSeed(seed) {
@@ -1992,10 +2227,13 @@
       const connected = collab.connected;
       const connecting = !connected && !!collab.socket && collab.socket.readyState === WebSocket.CONNECTING;
       const isHost = collab.role === 'host';
+      const canSignal = !!collab.permissions.guestCanSignal;
+      const showSignals = connected && !isHost && canSignal;
 
       // Idle vs live
       if (el.teamIdle) el.teamIdle.style.display = connected || connecting ? 'none' : '';
       if (el.teamLive) el.teamLive.style.display = connected || connecting ? '' : 'none';
+      if (el.teamSignalsSection) el.teamSignalsSection.style.display = showSignals ? '' : 'none';
       if (el.teamMembersSection) el.teamMembersSection.style.display = connected ? '' : 'none';
       if (el.teamLeaveSection) el.teamLeaveSection.style.display = connected || connecting ? '' : 'none';
       if (el.permissionsPanel) el.permissionsPanel.style.display = connected && isHost ? '' : 'none';
@@ -2045,6 +2283,7 @@
       const canPlay = isHost || !!collab.permissions.guestCanPlay;
       const canNext = isHost || !!collab.permissions.guestCanNext;
       const canReset = isHost || !!collab.permissions.guestCanReset;
+      const canSignal = isHost || !!collab.permissions.guestCanSignal;
       const canEdit = isHost || !collab.connected || !!collab.permissions.guestCanEdit;
 
       el.startBtn.disabled = collab.connected && !canPlay;
@@ -2058,7 +2297,10 @@
       if (el.permPlayInput) el.permPlayInput.checked = !!collab.permissions.guestCanPlay;
       if (el.permNextInput) el.permNextInput.checked = !!collab.permissions.guestCanNext;
       if (el.permResetInput) el.permResetInput.checked = !!collab.permissions.guestCanReset;
+      if (el.permSignalInput) el.permSignalInput.checked = !!collab.permissions.guestCanSignal;
       if (el.permEditInput) el.permEditInput.checked = !!collab.permissions.guestCanEdit;
+      if (el.signalPrevBtn) el.signalPrevBtn.disabled = !collab.connected || isHost || !canSignal;
+      if (el.signalNextBtn) el.signalNextBtn.disabled = !collab.connected || isHost || !canSignal;
 
       [el.sessionName, el.targetInput, el.alertThreshold, el.alertThresholdUnit, el.addSection, el.loadDefault,
        el.timerScale, el.sectionScale, el.labelScale, el.barHeight, el.colorTimer, el.colorSection,
@@ -2144,11 +2386,65 @@
         guestCanPlay: !!el.permPlayInput?.checked,
         guestCanNext: !!el.permNextInput?.checked,
         guestCanReset: !!el.permResetInput?.checked,
+        guestCanSignal: !!el.permSignalInput?.checked,
         guestCanEdit: !!el.permEditInput?.checked
       };
       collab.permissions = permissions;
       sendToServer({ type: 'permissions', permissions });
       syncActionAccess();
+    }
+
+    function normalizeSignalName(nameInput, seed = collab.profile.iconSeed) {
+      return normalizeProfileName(nameInput, seed).slice(0, 18);
+    }
+
+    function clearTimerSignal() {
+      if (signalState.timer) {
+        clearTimeout(signalState.timer);
+        signalState.timer = null;
+      }
+      signalState.id = '';
+      signalState.direction = '';
+      [el.timerSignalPrev, el.timerSignalNext].forEach((node) => node?.classList.remove('active'));
+      if (el.timerSignalPrevName) el.timerSignalPrevName.textContent = '';
+      if (el.timerSignalNextName) el.timerSignalNextName.textContent = '';
+    }
+
+    function applyIncomingSignal(signal) {
+      const direction = signal?.direction === 'prev' ? 'prev' : signal?.direction === 'next' ? 'next' : '';
+      if (!direction) return;
+      const senderName = normalizeSignalName(signal?.senderName || 'Invitado', signal?.id || signal?.createdAt || direction);
+      const activeNode = direction === 'prev' ? el.timerSignalPrev : el.timerSignalNext;
+      const activeNameNode = direction === 'prev' ? el.timerSignalPrevName : el.timerSignalNextName;
+      const otherNode = direction === 'prev' ? el.timerSignalNext : el.timerSignalPrev;
+      const otherNameNode = direction === 'prev' ? el.timerSignalNextName : el.timerSignalPrevName;
+
+      signalState.id = String(signal?.id || `${direction}-${Date.now()}`);
+      signalState.direction = direction;
+      if (signalState.timer) clearTimeout(signalState.timer);
+
+      otherNode?.classList.remove('active');
+      if (otherNameNode) otherNameNode.textContent = '';
+      if (activeNameNode) activeNameNode.textContent = senderName;
+      if (activeNode) {
+        activeNode.classList.remove('active');
+        void activeNode.offsetWidth;
+        activeNode.classList.add('active');
+      }
+
+      signalState.timer = setTimeout(() => {
+        if (signalState.id !== String(signal?.id || '')) return;
+        clearTimerSignal();
+      }, 1600);
+    }
+
+    function sendSignal(direction) {
+      if (!collab.connected || collab.role === 'host' || !canSendToServer()) return;
+      if (!collab.permissions.guestCanSignal) return;
+      if (direction !== 'prev' && direction !== 'next') return;
+      if (sendAction('signal', { direction })) {
+        setTeamStatus(direction === 'prev' ? 'Sugerencia enviada: volver' : 'Sugerencia enviada: avanzar');
+      }
     }
 
     function updateRoomProfile(nameInput = collab.profile.name) {
@@ -2195,6 +2491,7 @@
         guestCanPlay: true,
         guestCanNext: true,
         guestCanReset: true,
+        guestCanSignal: true,
         guestCanEdit: true
       };
       connectToRoom(collab.roomId);
@@ -2218,6 +2515,7 @@
       remoteConfigVersion = -1;
       if (el.teamMembers) el.teamMembers.innerHTML = '';
       setTeamStatus('');
+      clearTimerSignal();
       el.roomLinkField.value = '';
       el.copyRoomBtn.disabled = true;
       syncActionAccess();
@@ -2256,6 +2554,10 @@
             applyRemoteState(msg);
             return;
           }
+          if (msg.type === 'signal') {
+            applyIncomingSignal(msg.signal);
+            return;
+          }
           if (msg.type === 'error') {
             setTeamStatus(msg.message || 'Acción no válida');
             return;
@@ -2273,8 +2575,10 @@
           guestCanPlay: true,
           guestCanNext: true,
           guestCanReset: true,
+          guestCanSignal: true,
           guestCanEdit: true
         };
+        clearTimerSignal();
         setTeamStatus(collab.manualClose ? 'Sesión local restaurada' : 'Sin conexión en tiempo real');
         syncActionAccess();
         collab.manualClose = false;
@@ -2292,7 +2596,7 @@
       const previousIndex = state.currentIndex;
       collab.connected = true;
       collab.role = msg.role || 'guest';
-      if (msg.permissions) collab.permissions = msg.permissions;
+      if (msg.permissions) collab.permissions = { ...collab.permissions, ...msg.permissions };
       renderMembers(msg.members || []);
       updateRoomLink();
 
@@ -3204,7 +3508,10 @@
     el.permPlayInput?.addEventListener('change', applyPermissionsUpdate);
     el.permNextInput?.addEventListener('change', applyPermissionsUpdate);
     el.permResetInput?.addEventListener('change', applyPermissionsUpdate);
+    el.permSignalInput?.addEventListener('change', applyPermissionsUpdate);
     el.permEditInput?.addEventListener('change', applyPermissionsUpdate);
+    el.signalPrevBtn?.addEventListener('click', () => sendSignal('prev'));
+    el.signalNextBtn?.addEventListener('click', () => sendSignal('next'));
     el.teamButton?.addEventListener('click', () => {
       setTeamPanelOpen(el.teamPanel?.classList.contains('hidden'));
     });
