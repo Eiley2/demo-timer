@@ -940,8 +940,11 @@
     .config.hidden {
       pointer-events: none;
       opacity: 0;
+      height: 0;
       max-height: 0;
       min-height: 0;
+      overflow: hidden;
+      gap: 0;
       transform: translateY(14px);
       padding-top: 0;
       padding-bottom: 0;
@@ -2310,6 +2313,12 @@
         currentStart: Number(roomState.currentStart) || 0,
         lastSectionIndex: previousIndex
       });
+
+      clearInterval(state.timer);
+      state.timer = null;
+      if (state.running) {
+        state.timer = setInterval(tick, CLIENT_TICK_MS);
+      }
 
       if (state.running) {
         enterRunningMode();
