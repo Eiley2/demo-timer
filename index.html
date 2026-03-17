@@ -1,0 +1,1137 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Demo Timer</title>
+  <style>
+    :root {
+      --timer-scale: 1;
+      --section-scale: 1;
+      --label-scale: 1;
+      --bar-height: 6;
+      --color-timer: #ffffff;
+      --color-section: #ffffff;
+      --color-bar: #ffffff;
+      --color-danger: #e84040;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Top bar ── */
+    .bar-area {
+      width: 100%;
+      padding: 24px 32px 0;
+    }
+
+    .timeline {
+      display: flex;
+      width: 100%;
+      height: calc(var(--bar-height) * 1px);
+      gap: 8px;
+      transition: height 0.2s ease;
+    }
+
+    .timeline-seg {
+      flex-grow: 1;
+      flex-basis: 0;
+      min-width: 0;
+      background: rgba(255,255,255,0.12);
+      position: relative;
+      overflow: hidden;
+      border-radius: 3px;
+    }
+
+    .timeline-seg.done { background: rgba(255,255,255,0.25); }
+
+    .timeline-seg .fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: color-mix(in srgb, var(--color-bar) 60%, transparent);
+      transition: width 0.15s linear;
+    }
+
+    .timeline-labels {
+      display: flex;
+      width: 100%;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .timeline-labels span {
+      flex-grow: 1;
+      flex-basis: 0;
+      min-width: 0;
+      font-size: calc(0.7rem * var(--label-scale));
+      opacity: 0.3;
+      text-align: center;
+      letter-spacing: 0.02em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: opacity 0.2s, font-size 0.2s ease;
+    }
+
+    .timeline-labels span.near { opacity: 0.45; }
+    .timeline-labels span.active { opacity: 0.7; }
+
+    /* ── Center: timer ── */
+    .timer-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      min-height: 0;
+    }
+
+    .session-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.25;
+      margin-bottom: 8px;
+    }
+
+    #totalTimer {
+      font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: calc(clamp(4rem, 15vw, 12rem) * var(--timer-scale));
+      font-weight: 200;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-timer);
+      transition: color 0.4s ease, font-size 0.2s ease;
+    }
+
+    .section-context {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      min-height: 48px;
+    }
+
+    .section-now {
+      font-size: calc(1.25rem * var(--section-scale));
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: var(--color-section);
+      transition: font-size 0.2s ease;
+    }
+
+    .section-now .time {
+      font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-weight: 400;
+      opacity: 0.5;
+      margin-left: 6px;
+      font-size: calc(1.05rem * var(--section-scale));
+    }
+
+    .section-position {
+      font-size: calc(0.8rem * var(--section-scale));
+      opacity: 0.3;
+      letter-spacing: 0.04em;
+      transition: font-size 0.2s ease;
+    }
+
+    .done-label {
+      font-size: 0.85rem;
+      opacity: 0.3;
+      margin-top: 10px;
+      min-height: 1.2em;
+    }
+
+    /* ── Danger ── */
+    .danger #totalTimer { color: var(--color-danger); }
+    .danger .timeline-seg .fill { background: color-mix(in srgb, var(--color-danger) 65%, transparent); }
+    .danger .timeline-seg.done { background: color-mix(in srgb, var(--color-danger) 30%, transparent); }
+
+    /* ── Controls ── */
+    .actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 24px;
+    }
+
+    .actions button {
+      font: inherit;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.4);
+      border-radius: 5px;
+      padding: 8px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .actions button:hover {
+      border-color: rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.7);
+    }
+
+    .actions button:disabled { opacity: 0.15; pointer-events: none; }
+
+    .actions button.primary {
+      border-color: rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.85);
+    }
+
+    /* ── Bottom config (3 columns) ── */
+    .config {
+      width: 100%;
+      max-width: 1100px;
+      height: 42vh;
+      min-height: 280px;
+      max-height: 420px;
+      flex-shrink: 0;
+      align-self: center;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 1fr;
+      gap: 40px;
+      padding: 0 32px 24px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 24px;
+    }
+
+    .config.hidden { display: none; }
+
+    @media (max-width: 860px) {
+      .config {
+        grid-template-columns: 1fr;
+        max-width: 420px;
+        height: auto;
+        max-height: 50vh;
+        gap: 28px;
+        overflow-y: auto;
+      }
+    }
+
+    .config-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      min-height: 0;
+    }
+
+    /* Scrollbar styling */
+    .config-col::-webkit-scrollbar,
+    .segments-scroll::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .config-col::-webkit-scrollbar-track,
+    .segments-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .config-col::-webkit-scrollbar-thumb,
+    .segments-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+    }
+
+    .config-col::-webkit-scrollbar-thumb:hover,
+    .segments-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Firefox */
+    .config-col,
+    .segments-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+
+    .col-title {
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      opacity: 0.35;
+    }
+
+    /* ── Form fields ── */
+    .setup-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+
+    .field label {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.45;
+    }
+
+    input {
+      font: inherit;
+      font-size: 0.85rem;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.9);
+      padding: 7px 0;
+      outline: none;
+      transition: border-color 0.2s;
+      border-radius: 0;
+    }
+
+    input:focus { border-color: rgba(255,255,255,0.4); }
+    input::placeholder { color: rgba(255,255,255,0.25); }
+
+    input[type="number"] { -moz-appearance: textfield; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; display: none; }
+
+    /* ── Section list ── */
+    .section-list-header {
+      display: grid;
+      grid-template-columns: 20px 1fr 44px 28px 24px;
+      gap: 6px;
+      padding-bottom: 4px;
+    }
+
+    .section-list-header span {
+      font-size: 0.5rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.35;
+    }
+
+    .section-list-header span:nth-child(3) { text-align: right; }
+
+    .section-row {
+      display: grid;
+      grid-template-columns: 20px 1fr 44px 28px 24px;
+      gap: 6px;
+      align-items: center;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .section-row:last-child { border-bottom: none; }
+
+    .section-num {
+      font-size: 0.6rem;
+      opacity: 0.3;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .section-row input {
+      border-bottom-color: rgba(255,255,255,0.05);
+      padding: 4px 0;
+      font-size: 0.78rem;
+    }
+
+    .section-row input:focus { border-bottom-color: rgba(255,255,255,0.3); }
+
+    .section-row input[type="number"] {
+      text-align: right;
+      font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.78rem;
+      -moz-appearance: textfield;
+    }
+
+    .section-row input[type="number"]::-webkit-inner-spin-button { display: none; }
+
+    .section-row .unit-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.25);
+      font-size: 0.55rem;
+      font-family: inherit;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      padding: 2px 0;
+      text-align: center;
+      text-transform: lowercase;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+
+    .section-row .unit-btn:hover { color: rgba(255,255,255,0.5); }
+
+    .section-row .remove {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.15);
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 2px;
+      text-align: center;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+
+    .section-row .remove:hover { color: rgba(255,255,255,0.5); }
+
+    .segments-scroll {
+      overflow-y: scroll;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .list-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+
+    .list-footer-actions {
+      display: flex;
+      gap: 2px;
+    }
+
+    .list-footer-actions button {
+      font: inherit;
+      font-size: 0.65rem;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.35);
+      cursor: pointer;
+      padding: 3px 6px;
+      transition: color 0.2s;
+    }
+
+    .list-footer-actions button:hover { color: rgba(255,255,255,0.65); }
+
+    .total-summary {
+      font-size: 0.65rem;
+      font-variant-numeric: tabular-nums;
+      opacity: 0.5;
+    }
+
+    .total-summary .match { color: rgba(255,255,255,0.75); }
+    .total-summary .over { color: var(--color-danger); opacity: 1; }
+
+    /* ── Size & color config ── */
+    .size-row, .color-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .size-row label, .color-row label {
+      font-size: 0.65rem;
+      opacity: 0.45;
+      white-space: nowrap;
+      min-width: 70px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      border-bottom: none;
+      outline: none;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      border: none;
+      cursor: pointer;
+    }
+
+    input[type="color"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 50%;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+    input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+    input[type="color"]::-moz-color-swatch { border: none; border-radius: 50%; }
+
+    /* ── Collapsible ── */
+    .collapsible-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .collapsible-toggle .chevron {
+      font-size: 0.5rem;
+      opacity: 0.25;
+      transition: transform 0.2s ease;
+    }
+
+    .collapsible-toggle.open .chevron { transform: rotate(90deg); }
+
+    .collapsible-body {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .collapsible-body.open { display: flex; }
+
+    /* ── Sub-section ── */
+    .sub-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sub-title {
+      font-size: 0.55rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.25;
+      margin-top: 4px;
+    }
+
+    /* ── Guide ── */
+    .guide p {
+      font-size: 0.68rem;
+      line-height: 1.65;
+      opacity: 0.3;
+    }
+
+    .guide kbd {
+      display: inline-block;
+      font-family: inherit;
+      font-size: 0.6rem;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 3px;
+      padding: 1px 5px;
+      opacity: 0.7;
+      vertical-align: 1px;
+    }
+
+    /* ── Edit toggle (while running) ── */
+    .edit-toggle {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.1);
+      font: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 4px 10px;
+      transition: color 0.2s;
+    }
+
+    .edit-toggle:hover { color: rgba(255,255,255,0.3); }
+    .edit-toggle.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <!-- Top: progress bar -->
+  <div class="bar-area">
+    <div class="timeline" id="timeline"></div>
+    <div class="timeline-labels" id="timelineLabels"></div>
+  </div>
+
+  <!-- Center: timer -->
+  <div class="timer-area" id="displayPanel">
+    <div class="session-name" id="sessionTitle">Demo</div>
+    <div id="totalTimer">30:00</div>
+
+    <div class="section-context">
+      <div class="section-now" id="sectionNow"></div>
+      <div class="section-position" id="sectionPosition"></div>
+    </div>
+
+    <div class="done-label" id="doneText"></div>
+
+    <div class="actions">
+      <button id="startBtn" class="primary">Iniciar</button>
+      <button id="nextBtn" disabled>Siguiente</button>
+      <button id="resetBtn">Reiniciar</button>
+    </div>
+  </div>
+
+  <!-- Bottom: config in 3 columns -->
+  <section class="config" id="configPanel">
+    <!-- Col 1: Session -->
+    <div class="config-col">
+      <div class="col-title">Sesión</div>
+      <div class="setup-fields">
+        <div class="field">
+          <label for="sessionName">Nombre</label>
+          <input id="sessionName" type="text" value="Demo" placeholder="Ej: Sprint Review" />
+        </div>
+        <div class="field">
+          <label for="targetMinutes">Objetivo (min)</label>
+          <input id="targetMinutes" type="number" min="1" value="30" placeholder="30" />
+        </div>
+      </div>
+
+      <div class="guide" style="margin-top: auto;">
+        <div class="sub-title">Cómo funciona</div>
+        <p>
+          Configurá las secciones y presioná <kbd>Iniciar</kbd>.
+          La barra superior muestra el avance por sección.
+          <kbd>Espacio</kbd> pausa, <kbd>N</kbd> siguiente, <kbd>R</kbd> reinicia.
+          Si superás el objetivo, el timer se pone rojo.
+        </p>
+      </div>
+    </div>
+
+    <!-- Col 2: Sections -->
+    <div class="config-col">
+      <div class="col-title">Secciones</div>
+      <div class="section-list-header">
+        <span></span>
+        <span>Nombre</span>
+        <span>Tiempo</span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="segments-scroll" id="segments"></div>
+      <div class="list-footer">
+        <div class="list-footer-actions">
+          <button id="addSection">+ Agregar</button>
+          <button id="loadDefault">Ejemplo 30m</button>
+        </div>
+        <div class="total-summary" id="totalSummary"></div>
+      </div>
+    </div>
+
+    <!-- Col 3: Appearance -->
+    <div class="config-col">
+      <div class="col-title">Apariencia</div>
+
+      <div class="sub-section">
+        <div class="sub-title">Tamaño</div>
+        <div class="size-row">
+          <label>Cronómetro</label>
+          <input type="range" id="timerScale" min="0.6" max="1.4" step="0.05" value="1" />
+        </div>
+        <div class="size-row">
+          <label>Sección</label>
+          <input type="range" id="sectionScale" min="0.7" max="1.8" step="0.05" value="1" />
+        </div>
+        <div class="size-row">
+          <label>Labels</label>
+          <input type="range" id="labelScale" min="0.6" max="2" step="0.05" value="1" />
+        </div>
+        <div class="size-row">
+          <label>Barra</label>
+          <input type="range" id="barHeight" min="3" max="14" step="1" value="6" />
+        </div>
+      </div>
+
+      <div class="sub-section">
+        <div class="collapsible-toggle" data-target="colorsBody">
+          <div class="sub-title" style="margin-top:0;">Colores</div>
+          <span class="chevron">&#9654;</span>
+        </div>
+        <div class="collapsible-body" id="colorsBody">
+          <div class="color-row">
+            <label>Cronómetro</label>
+            <input type="color" id="colorTimer" value="#ffffff" />
+          </div>
+          <div class="color-row">
+            <label>Sección</label>
+            <input type="color" id="colorSection" value="#ffffff" />
+          </div>
+          <div class="color-row">
+            <label>Barra</label>
+            <input type="color" id="colorBar" value="#ffffff" />
+          </div>
+          <div class="color-row">
+            <label>Alerta</label>
+            <input type="color" id="colorDanger" value="#e84040" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <button class="edit-toggle hidden" id="editToggle">Editar</button>
+
+  <script>
+    const el = {
+      container: document.getElementById('segments'),
+      targetInput: document.getElementById('targetMinutes'),
+      sessionName: document.getElementById('sessionName'),
+      startBtn: document.getElementById('startBtn'),
+      nextBtn: document.getElementById('nextBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      addSection: document.getElementById('addSection'),
+      loadDefault: document.getElementById('loadDefault'),
+      totalTimer: document.getElementById('totalTimer'),
+      sessionTitle: document.getElementById('sessionTitle'),
+      sectionNow: document.getElementById('sectionNow'),
+      sectionPosition: document.getElementById('sectionPosition'),
+      timeline: document.getElementById('timeline'),
+      timelineLabels: document.getElementById('timelineLabels'),
+      displayPanel: document.getElementById('displayPanel'),
+      doneText: document.getElementById('doneText'),
+      configPanel: document.getElementById('configPanel'),
+      editToggle: document.getElementById('editToggle'),
+      totalSummary: document.getElementById('totalSummary'),
+      timerScale: document.getElementById('timerScale'),
+      sectionScale: document.getElementById('sectionScale'),
+      labelScale: document.getElementById('labelScale'),
+      barHeight: document.getElementById('barHeight'),
+      colorTimer: document.getElementById('colorTimer'),
+      colorSection: document.getElementById('colorSection'),
+      colorBar: document.getElementById('colorBar'),
+      colorDanger: document.getElementById('colorDanger')
+    };
+
+    const state = {
+      running: false,
+      currentIndex: 0,
+      currentMs: 0,
+      currentStart: 0,
+      timer: null,
+      completed: false
+    };
+
+    const toMs = (min) => Math.max(0, Number(min) || 0) * 60000;
+
+    const fmt = (ms) => {
+      const s = Math.max(0, Math.floor(ms / 1000));
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      const h = Math.floor(m / 60);
+      const mm = m % 60;
+      if (h > 0) return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+      return `${String(mm).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    };
+
+    /* ── Layout modes ── */
+    function enterRunningMode() {
+      el.configPanel.classList.add('hidden');
+      el.editToggle.classList.remove('hidden');
+    }
+
+    function exitRunningMode() {
+      el.configPanel.classList.remove('hidden');
+      el.editToggle.classList.add('hidden');
+    }
+
+    el.editToggle.addEventListener('click', exitRunningMode);
+
+
+    /* ── Collapsibles ── */
+    document.querySelectorAll('.collapsible-toggle').forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const body = document.getElementById(toggle.dataset.target);
+        toggle.classList.toggle('open');
+        body.classList.toggle('open');
+      });
+    });
+
+    /* ── Appearance ── */
+    function applyCSSVars() {
+      const r = document.documentElement.style;
+      r.setProperty('--timer-scale', el.timerScale.value);
+      r.setProperty('--section-scale', el.sectionScale.value);
+      r.setProperty('--label-scale', el.labelScale.value);
+      r.setProperty('--bar-height', el.barHeight.value);
+      r.setProperty('--color-timer', el.colorTimer.value);
+      r.setProperty('--color-section', el.colorSection.value);
+      r.setProperty('--color-bar', el.colorBar.value);
+      r.setProperty('--color-danger', el.colorDanger.value);
+    }
+
+    [el.timerScale, el.sectionScale, el.labelScale, el.barHeight,
+     el.colorTimer, el.colorSection, el.colorBar, el.colorDanger
+    ].forEach(input => input.addEventListener('input', () => { applyCSSVars(); persist(); }));
+
+    /* ── Row numbering ── */
+    function renumberRows() {
+      el.container.querySelectorAll('.section-row').forEach((row, i) => {
+        row.querySelector('.section-num').textContent = i + 1;
+      });
+    }
+
+    /* ── Sections ── */
+    function buildSectionRow(name = 'Sección', val = 5, rowUnit = 'min') {
+      const row = document.createElement('div');
+      row.className = 'section-row';
+      row.dataset.unit = rowUnit;
+      row.innerHTML = `
+        <span class="section-num"></span>
+        <input type="text" class="sectionName" value="${name}" placeholder="Nombre">
+        <input type="number" class="sectionMinutes" min="0" value="${val}" placeholder="0">
+        <button type="button" class="unit-btn">${rowUnit}</button>
+        <button type="button" class="remove">&times;</button>
+      `;
+      row.querySelector('.unit-btn').addEventListener('click', () => {
+        const input = row.querySelector('.sectionMinutes');
+        const v = Number(input.value) || 0;
+        if (row.dataset.unit === 'min') {
+          row.dataset.unit = 'seg';
+          input.value = Math.round(v * 60);
+        } else {
+          row.dataset.unit = 'min';
+          input.value = Math.round(v / 60 * 10) / 10;
+        }
+        row.querySelector('.unit-btn').textContent = row.dataset.unit;
+        persist();
+        resetTimer();
+      });
+      row.querySelector('.remove').addEventListener('click', () => {
+        row.remove();
+        ensureSectionExists();
+        renumberRows();
+        resetTimer();
+        persist();
+      });
+      row.querySelector('.sectionName').addEventListener('input', () => { persist(); updateView(); });
+      row.querySelector('.sectionMinutes').addEventListener('input', () => { persist(); resetTimer(); });
+      return row;
+    }
+
+    function parseSections() {
+      return [...el.container.querySelectorAll('.section-row')].map((row) => ({
+        name: row.querySelector('.sectionName').value.trim() || 'Sin nombre',
+        value: Math.max(0, Number(row.querySelector('.sectionMinutes').value) || 0),
+        unit: row.dataset.unit || 'min'
+      }));
+    }
+
+    function sectionToMs(s) {
+      return s.unit === 'seg' ? s.value * 1000 : s.value * 60000;
+    }
+
+    function totalMs() {
+      return parseSections().reduce((a, s) => a + sectionToMs(s), 0);
+    }
+
+    function getSectionMs(index) {
+      const s = parseSections();
+      return index >= 0 && index < s.length ? sectionToMs(s[index]) : 0;
+    }
+
+    function ensureSectionExists() {
+      if (!el.container.querySelector('.section-row')) {
+        el.container.appendChild(buildSectionRow('Sección', 5));
+        renumberRows();
+      }
+    }
+
+    function remainingAfterCurrent(index) {
+      const sections = parseSections();
+      let ms = 0;
+      for (let i = index + 1; i < sections.length; i++) ms += sectionToMs(sections[i]);
+      return ms;
+    }
+
+    /* ── Timeline ── */
+    function buildTimeline(sections) {
+      el.timeline.innerHTML = '';
+      el.timelineLabels.innerHTML = '';
+      sections.forEach((s, i) => {
+        const seg = document.createElement('div');
+        seg.className = 'timeline-seg';
+        seg.style.flexGrow = sectionToMs(s) || 500;
+        seg.innerHTML = '<div class="fill"></div>';
+        el.timeline.appendChild(seg);
+
+        const label = document.createElement('span');
+        label.textContent = s.name;
+        label.dataset.name = s.name;
+        label.dataset.index = i;
+        label.style.flexGrow = sectionToMs(s) || 500;
+        el.timelineLabels.appendChild(label);
+      });
+    }
+
+    function updateTimeline(currentIndex, segmentProgress) {
+      el.timeline.querySelectorAll('.timeline-seg').forEach((seg, i) => {
+        const fill = seg.querySelector('.fill');
+        seg.classList.toggle('done', i < currentIndex);
+        if (i < currentIndex) fill.style.width = '100%';
+        else if (i === currentIndex) fill.style.width = `${Math.max(0, Math.min(100, segmentProgress))}%`;
+        else fill.style.width = '0%';
+      });
+      const labels = el.timelineLabels.querySelectorAll('span');
+      const count = labels.length;
+      const compact = count > 5;
+      labels.forEach((label, i) => {
+        const isActive = i === currentIndex;
+        const isNear = Math.abs(i - currentIndex) <= 1;
+        label.classList.toggle('active', isActive);
+        label.classList.toggle('near', !isActive && isNear);
+        if (compact) {
+          label.textContent = isNear ? label.dataset.name : (i + 1);
+        } else {
+          label.textContent = label.dataset.name;
+        }
+      });
+    }
+
+    /* ── Total summary ── */
+    function updateSummary() {
+      const totalMsVal = totalMs();
+      const totalMin = Math.round(totalMsVal / 60000 * 10) / 10;
+      const target = Number(el.targetInput.value) || 0;
+      const diff = Math.round((totalMin - target) * 10) / 10;
+      if (target <= 0) { el.totalSummary.innerHTML = `${totalMin} min`; return; }
+      if (diff === 0) el.totalSummary.innerHTML = `<span class="match">${totalMin} min — coincide</span>`;
+      else if (diff > 0) el.totalSummary.innerHTML = `<span class="over">${totalMin} min (+${diff})</span>`;
+      else el.totalSummary.innerHTML = `${totalMin} min (${diff})`;
+    }
+
+    /* ── View ── */
+    function updateView() {
+      const sections = parseSections();
+      const target = Number(el.targetInput.value) || 0;
+      const nowRemainingCurrent = state.running
+        ? Math.max(0, state.currentMs - (Date.now() - state.currentStart))
+        : state.currentMs;
+      const remainingFuture = remainingAfterCurrent(state.currentIndex);
+      const totalRemaining = nowRemainingCurrent + remainingFuture;
+
+      el.sessionTitle.textContent = el.sessionName.value || 'Demo';
+      el.totalTimer.textContent = fmt(totalRemaining);
+      updateSummary();
+
+      if (state.completed || sections.length === 0 || state.currentIndex >= sections.length) {
+        el.sectionNow.textContent = '';
+        el.sectionPosition.textContent = '';
+        el.doneText.textContent = state.completed ? 'Sesión finalizada' : '';
+        el.displayPanel.classList.remove('danger');
+        updateTimeline(sections.length, 0);
+        return;
+      }
+
+      const current = sections[state.currentIndex];
+      const next = sections[state.currentIndex + 1];
+
+      el.sectionNow.innerHTML =
+        `${current.name}<span class="time">${fmt(nowRemainingCurrent)}</span>`;
+
+      el.sectionPosition.textContent =
+        `${state.currentIndex + 1} de ${sections.length}` +
+        (next ? ` — siguiente: ${next.name}` : ' — última sección');
+
+      const sectionTotal = getSectionMs(state.currentIndex) || 1;
+      const usedPct = (1 - nowRemainingCurrent / sectionTotal) * 100;
+      updateTimeline(state.currentIndex, usedPct);
+
+      const targetMs = target * 60000;
+      el.displayPanel.classList.toggle('danger', targetMs > 0 && totalRemaining > targetMs);
+      el.doneText.textContent = '';
+    }
+
+    /* ── Timer logic ── */
+    function startTimer() {
+      if (state.completed) return;
+      const sections = parseSections();
+      if (sections.length === 0) return;
+      if (state.currentIndex >= sections.length) { resetTimer(); return; }
+      if (state.currentMs <= 0) state.currentMs = getSectionMs(state.currentIndex);
+      if (state.currentMs <= 0 && sections.length) state.currentMs = sectionToMs(sections[0]);
+      state.running = true;
+      state.currentStart = Date.now();
+      el.startBtn.textContent = 'Pausar';
+      el.nextBtn.disabled = false;
+      enterRunningMode();
+      buildTimeline(sections);
+      clearInterval(state.timer);
+      state.timer = setInterval(tick, 150);
+      updateView();
+    }
+
+    function pauseTimer() {
+      if (!state.running) return;
+      state.currentMs = Math.max(0, state.currentMs - (Date.now() - state.currentStart));
+      state.running = false;
+      clearInterval(state.timer);
+      state.timer = null;
+      el.startBtn.textContent = 'Reanudar';
+      updateView();
+    }
+
+    function resetTimer() {
+      clearInterval(state.timer);
+      Object.assign(state, {
+        timer: null,
+        running: false,
+        completed: false,
+        currentIndex: 0,
+        currentMs: getSectionMs(0),
+        currentStart: 0
+      });
+      el.startBtn.textContent = 'Iniciar';
+      el.nextBtn.disabled = parseSections().length < 2;
+      exitRunningMode();
+      buildTimeline(parseSections());
+      updateView();
+    }
+
+    function nextSection() {
+      const sections = parseSections();
+      if (state.currentIndex < sections.length - 1) {
+        state.currentIndex += 1;
+        state.currentMs = getSectionMs(state.currentIndex);
+        state.currentStart = state.running ? Date.now() : 0;
+        updateView();
+      } else {
+        finishSession();
+      }
+    }
+
+    function finishSession() {
+      clearInterval(state.timer);
+      state.timer = null;
+      state.running = false;
+      state.completed = true;
+      state.currentIndex = parseSections().length;
+      state.currentMs = 0;
+      el.nextBtn.disabled = true;
+      el.startBtn.textContent = 'Fin';
+      updateView();
+    }
+
+    function tick() {
+      const remaining = Math.max(0, state.currentMs - (Date.now() - state.currentStart));
+      if (remaining <= 0) {
+        const sections = parseSections();
+        if (state.currentIndex < sections.length - 1) {
+          state.currentIndex += 1;
+          state.currentMs = getSectionMs(state.currentIndex);
+          state.currentStart = Date.now();
+          if (state.currentMs <= 0) { finishSession(); return; }
+        } else { finishSession(); return; }
+      }
+      updateView();
+    }
+
+    /* ── Persistence ── */
+    function persist() {
+      localStorage.setItem('demo-timer-simple', JSON.stringify({
+        name: el.sessionName.value,
+        target: el.targetInput.value,
+        timerScale: el.timerScale.value,
+        sectionScale: el.sectionScale.value,
+        labelScale: el.labelScale.value,
+        barHeight: el.barHeight.value,
+        colorTimer: el.colorTimer.value,
+        colorSection: el.colorSection.value,
+        colorBar: el.colorBar.value,
+        colorDanger: el.colorDanger.value,
+        sections: parseSections()
+      }));
+    }
+
+    function loadStored() {
+      const raw = localStorage.getItem('demo-timer-simple');
+      if (!raw) { applyDefault(); return; }
+      try {
+        const cfg = JSON.parse(raw);
+        el.sessionName.value = cfg.name || 'Demo';
+        el.targetInput.value = Number(cfg.target) || 30;
+        el.timerScale.value = Number(cfg.timerScale) || 1;
+        el.sectionScale.value = Number(cfg.sectionScale) || 1;
+        el.labelScale.value = Number(cfg.labelScale) || 1;
+        el.barHeight.value = Number(cfg.barHeight) || 6;
+        el.colorTimer.value = cfg.colorTimer || '#ffffff';
+        el.colorSection.value = cfg.colorSection || '#ffffff';
+        el.colorBar.value = cfg.colorBar || '#ffffff';
+        el.colorDanger.value = cfg.colorDanger || '#e84040';
+        const sec = Array.isArray(cfg.sections) && cfg.sections.length
+          ? cfg.sections
+          : [{ name: 'Introducción', value: 8 }, { name: 'Bloque técnico', value: 15 }, { name: 'Cierre', value: 7 }];
+        el.container.innerHTML = '';
+        sec.forEach((s) => el.container.appendChild(buildSectionRow(s.name || 'Sección', s.value ?? s.minutes ?? 5, s.unit || 'min')));
+        ensureSectionExists();
+        renumberRows();
+      } catch (_e) {
+        applyDefault();
+        return;
+      }
+      applyCSSVars();
+      updateView();
+    }
+
+    function applyDefault() {
+      el.container.innerHTML = '';
+      el.container.appendChild(buildSectionRow('Introducción', 6));
+      el.container.appendChild(buildSectionRow('Demo', 15));
+      el.container.appendChild(buildSectionRow('Cierre', 9));
+      el.targetInput.value = 30;
+      el.sessionName.value = 'Demo';
+      renumberRows();
+      persist();
+      updateView();
+    }
+
+    el.startBtn.addEventListener('click', () => { state.running ? pauseTimer() : startTimer(); });
+    el.resetBtn.addEventListener('click', resetTimer);
+    el.nextBtn.addEventListener('click', nextSection);
+    el.addSection.addEventListener('click', () => {
+      el.container.appendChild(buildSectionRow('Nueva sección', 5));
+      renumberRows();
+      persist();
+      resetTimer();
+    });
+    el.loadDefault.addEventListener('click', () => { applyDefault(); resetTimer(); });
+    el.targetInput.addEventListener('input', () => { updateView(); persist(); });
+    el.sessionName.addEventListener('input', () => { persist(); updateView(); });
+
+    document.addEventListener('keydown', (e) => {
+      const tag = e.target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.key === ' ') { e.preventDefault(); el.startBtn.click(); }
+      if (e.key.toLowerCase() === 'n') { e.preventDefault(); el.nextBtn.click(); }
+      if (e.key.toLowerCase() === 'r') { e.preventDefault(); el.resetBtn.click(); }
+    });
+
+    loadStored();
+    resetTimer();
+  </script>
+</body>
+</html>
