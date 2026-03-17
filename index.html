@@ -371,7 +371,7 @@
       pointer-events: none;
       transform-origin: center;
       overflow: hidden;
-      transition: opacity 180ms var(--ease-out-quart), transform 180ms var(--ease-out-quart), color 180ms var(--ease-out-quart), background-color 180ms var(--ease-out-quart);
+      transition: opacity 110ms var(--ease-out-expo), transform 110ms var(--ease-out-expo), color 110ms var(--ease-out-expo), background-color 110ms var(--ease-out-expo);
       align-self: stretch;
     }
 
@@ -408,40 +408,40 @@
     }
 
     .timer-signal--prev.active {
-      animation: timerSignalPulsePrev 1.45s var(--ease-out-expo) both;
+      animation: timerSignalPulsePrev 720ms var(--ease-out-expo) both;
     }
 
     .timer-signal--next.active {
-      animation: timerSignalPulseNext 1.45s var(--ease-out-expo) both;
+      animation: timerSignalPulseNext 720ms var(--ease-out-expo) both;
     }
 
     @keyframes timerSignalPulsePrev {
       0% {
-        opacity: 0.3;
-        transform: translateX(0.08em) scale(0.96);
+        opacity: 0.18;
+        transform: translateX(0.1em) scale(0.92);
       }
-      55% {
+      32% {
         opacity: 1;
-        transform: scale(1);
+        transform: translateX(0) scale(1);
       }
       100% {
-        opacity: 0.74;
-        transform: scale(0.995);
+        opacity: 0;
+        transform: translateX(-0.03em) scale(0.97);
       }
     }
 
     @keyframes timerSignalPulseNext {
       0% {
-        opacity: 0.3;
-        transform: translateX(-0.08em) scale(0.96);
+        opacity: 0.18;
+        transform: translateX(-0.1em) scale(0.92);
       }
-      55% {
+      32% {
         opacity: 1;
-        transform: scale(1);
+        transform: translateX(0) scale(1);
       }
       100% {
-        opacity: 0.74;
-        transform: scale(0.995);
+        opacity: 0;
+        transform: translateX(0.03em) scale(0.97);
       }
     }
 
@@ -2441,7 +2441,7 @@
       signalState.timer = setTimeout(() => {
         if (signalState.id !== String(signal?.id || '')) return;
         clearTimerSignal();
-      }, 1600);
+      }, 760);
     }
 
     function sendSignal(direction) {
