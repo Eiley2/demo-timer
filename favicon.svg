@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Demo Timer Favicon</title>
+  <desc id="desc">Cronómetro minimalista para Demo Timer</desc>
+  <rect width="256" height="256" rx="44" fill="#000000" />
+  <circle cx="128" cy="128" r="86" fill="none" stroke="#ffffff" stroke-width="18" />
+  <path d="M128 56v24M128 176v24M56 128h24M176 128h24" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.85" />
+  <line x1="128" y1="128" x2="128" y2="80" stroke="#ffffff" stroke-width="14" stroke-linecap="round">
+    <animateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 128 128" to="360 128 128" dur="6s" repeatCount="indefinite" />
+  </line>
+  <line x1="128" y1="128" x2="168" y2="128" stroke="#e84040" stroke-width="10" stroke-linecap="round">
+    <animate attributeName="opacity" values="1;0.2;1" dur="1.8s" repeatCount="indefinite" />
+  </line>
+  <path d="M128 92V128L151 151" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

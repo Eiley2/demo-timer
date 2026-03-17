@@ -43,6 +43,11 @@
   <meta name="twitter:image" content="https://github.com/Eiley2.png" />
   <link rel="canonical" id="canonical-url" href="https://demos.eiley.dev" />
   <link rel="alternate" id="alternate-url" href="https://demos.eiley.dev" hreflang="es" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
   <script type="application/ld+json" id="ld-json-app">
     {
@@ -156,6 +161,11 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    @keyframes timerAlertBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.28; }
+    }
+
     /* ── Top bar ── */
     .bar-area {
       width: 100%;
@@ -254,6 +264,11 @@
       animation-delay: 230ms;
     }
 
+    #totalTimerWrapper {
+      display: inline-block;
+      transform: translateZ(0);
+    }
+
     #totalTimer {
       font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
       font-size: calc(clamp(4rem, 15vw, 12rem) * var(--timer-scale));
@@ -266,6 +281,14 @@
       transform: translateZ(0);
       animation: timerReveal 0.7s var(--ease-out-expo) both;
       animation-delay: 280ms;
+    }
+
+    .alerting #totalTimerWrapper {
+      animation: timerAlertBlink 0.95s var(--ease-out-quart) infinite;
+    }
+
+    .alerting #totalTimer {
+      color: var(--color-danger);
     }
 
     .section-context {
@@ -501,6 +524,32 @@
     }
 
     .field { display: flex; flex-direction: column; gap: 5px; }
+
+    .field-inline {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .field-inline input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .field-inline .alert-threshold-unit {
+      font-size: 0.55rem;
+      line-height: 1;
+      min-width: 34px;
+      text-align: center;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.4);
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      border-radius: 0;
+      padding: 7px 0 8px;
+      text-transform: lowercase;
+    }
 
     .field label {
       font-size: 0.6rem;
@@ -873,7 +922,7 @@
   <!-- Center: timer -->
   <main class="timer-area" id="displayPanel" role="main" aria-live="polite">
     <div class="session-name" id="sessionTitle">Demo</div>
-    <div id="totalTimer">30:00</div>
+    <div id="totalTimerWrapper"><div id="totalTimer">30:00</div></div>
 
     <div class="section-context">
       <div class="section-now" id="sectionNow"></div>
@@ -902,6 +951,13 @@
         <div class="field">
           <label for="targetMinutes">Objetivo (min)</label>
           <input id="targetMinutes" type="number" min="1" value="30" placeholder="30" />
+        </div>
+        <div class="field">
+          <label for="alertThreshold">Alerta cuando falten</label>
+          <div class="field-inline">
+            <input id="alertThreshold" type="number" min="1" value="30" placeholder="30" />
+            <button id="alertThresholdUnit" type="button" class="unit-btn alert-threshold-unit" data-unit="seg">seg</button>
+          </div>
         </div>
       </div>
 
@@ -997,6 +1053,8 @@
     const el = {
       container: document.getElementById('segments'),
       targetInput: document.getElementById('targetMinutes'),
+      alertThreshold: document.getElementById('alertThreshold'),
+      alertThresholdUnit: document.getElementById('alertThresholdUnit'),
       canonicalUrl: document.getElementById('canonical-url'),
       alternateUrl: document.getElementById('alternate-url'),
       ogUrl: document.getElementById('og-url'),
@@ -1068,6 +1126,12 @@
     }
 
     const toMs = (min) => Math.max(0, Number(min) || 0) * 60000;
+
+    function getAlertThresholdMs() {
+      const value = Math.max(0, Number(el.alertThreshold.value) || 0);
+      const unit = el.alertThresholdUnit?.dataset?.unit || 'seg';
+      return unit === 'min' ? value * 60000 : value * 1000;
+    }
 
     const fmt = (ms) => {
       const s = Math.max(0, Math.floor(ms / 1000));
@@ -1364,6 +1428,7 @@
         el.sectionPosition.textContent = '';
         el.doneText.textContent = state.completed ? 'Sesión terminada' : '';
         el.displayPanel.classList.remove('danger');
+        el.displayPanel.classList.remove('alerting');
         state.lastSectionIndex = -1;
         el.totalTimer.dataset.valueMs = '0';
         updateTimeline(sections, sections.length, 0);
@@ -1399,6 +1464,11 @@
 
       const targetMs = target * 60000;
       el.displayPanel.classList.toggle('danger', targetMs > 0 && totalRemaining > targetMs);
+      const alertThresholdMs = getAlertThresholdMs();
+      el.displayPanel.classList.toggle(
+        'alerting',
+        !state.completed && alertThresholdMs > 0 && totalRemaining > 0 && totalRemaining <= alertThresholdMs
+      );
       if (isSectionChange) animateSectionSwap();
       el.doneText.textContent = '';
       updateRunningClass();
@@ -1499,6 +1569,8 @@
       localStorage.setItem('demo-timer-simple', JSON.stringify({
         name: el.sessionName.value,
         target: el.targetInput.value,
+        alertThreshold: el.alertThreshold.value,
+        alertThresholdUnit: el.alertThresholdUnit?.dataset?.unit || 'seg',
         timerScale: el.timerScale.value,
         sectionScale: el.sectionScale.value,
         labelScale: el.labelScale.value,
@@ -1518,6 +1590,9 @@
         const cfg = JSON.parse(raw);
         el.sessionName.value = cfg.name || 'Demo';
         el.targetInput.value = Number(cfg.target) || 30;
+        el.alertThreshold.value = Math.max(1, Number(cfg.alertThreshold) || 30);
+        el.alertThresholdUnit.dataset.unit = cfg.alertThresholdUnit || 'seg';
+        el.alertThresholdUnit.textContent = el.alertThresholdUnit.dataset.unit;
         el.timerScale.value = Number(cfg.timerScale) || 1;
         el.sectionScale.value = Number(cfg.sectionScale) || 1;
         el.labelScale.value = Number(cfg.labelScale) || 1;
@@ -1547,6 +1622,9 @@
       el.container.appendChild(buildSectionRow('Demo', 15));
       el.container.appendChild(buildSectionRow('Cierre', 9));
       el.targetInput.value = 30;
+      el.alertThreshold.value = 30;
+      el.alertThresholdUnit.dataset.unit = 'seg';
+      el.alertThresholdUnit.textContent = 'seg';
       el.sessionName.value = 'Demo';
       renumberRows();
       persist();
@@ -1564,6 +1642,14 @@
     });
     el.loadDefault.addEventListener('click', () => { applyDefault(); resetTimer(); });
     el.targetInput.addEventListener('input', () => { updateView(); persist(); });
+    el.alertThreshold.addEventListener('input', () => { updateView(); persist(); });
+    el.alertThresholdUnit.addEventListener('click', () => {
+      const next = el.alertThresholdUnit.dataset.unit === 'seg' ? 'min' : 'seg';
+      el.alertThresholdUnit.dataset.unit = next;
+      el.alertThresholdUnit.textContent = next;
+      updateView();
+      persist();
+    });
     el.sessionName.addEventListener('input', () => { persist(); updateView(); });
 
     document.addEventListener('click', (e) => {
