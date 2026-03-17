@@ -1471,6 +1471,18 @@
         padding: 20px 20px 28px;
       }
 
+      body.config-collapsed {
+        height: 100dvh;
+        overflow-y: hidden;
+      }
+
+      body.config-collapsed .timer-area {
+        flex: 1;
+        min-height: 0;
+        justify-content: center;
+        padding-bottom: 40px;
+      }
+
       .config {
         height: auto;
         min-height: 0;
@@ -2075,6 +2087,7 @@
       if (!canEdit) {
         el.configPanel.classList.add('hidden');
         el.editToggle.classList.add('hidden');
+        syncMobileLayoutState();
         return;
       }
 
@@ -2084,6 +2097,7 @@
         el.configPanel.classList.remove('hidden');
         el.editToggle.classList.add('hidden');
       }
+      syncMobileLayoutState();
     }
 
     function updateRoomLink() {
@@ -2499,21 +2513,28 @@
       el.startBtn.classList.toggle('is-running', !!state.running);
     }
 
+    function syncMobileLayoutState() {
+      document.body.classList.toggle('config-collapsed', el.configPanel.classList.contains('hidden'));
+    }
+
     /* ── Layout modes ── */
     function enterRunningMode() {
       el.configPanel.classList.add('hidden');
       syncConfigAccess();
+      syncMobileLayoutState();
       updateRunningClass();
     }
 
     function exitRunningMode() {
       syncConfigAccess();
+      syncMobileLayoutState();
       if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) {
         updateRunningClass();
         return;
       }
       el.configPanel.classList.remove('hidden');
       el.editToggle.classList.add('hidden');
+      syncMobileLayoutState();
       updateRunningClass();
     }
 
