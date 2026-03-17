@@ -445,19 +445,19 @@
     }
 
     .team-btn__icon {
-      width: 14px;
-      height: 14px;
+      width: 15px;
+      height: 15px;
       flex: none;
       fill: none;
       stroke: currentColor;
-      stroke-width: 1.6;
+      stroke-width: 1.7;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
 
     .team-btn__label {
-      font-size: 0.64rem;
-      letter-spacing: 0.12em;
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
     }
 
@@ -465,114 +465,235 @@
       position: fixed;
       top: 68px;
       right: 32px;
-      width: min(330px, calc(100vw - 28px));
+      width: min(360px, calc(100vw - 28px));
       z-index: 12;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(0,0,0,0.82);
-      backdrop-filter: blur(10px);
-      padding: 12px;
-      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(7,7,7,0.92);
+      backdrop-filter: blur(18px);
+      padding: 14px;
+      border-radius: 18px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      box-shadow: 0 14px 35px rgba(0,0,0,0.35);
+      gap: 10px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.42);
     }
 
     .team-panel.hidden { display: none; }
 
+    .team-panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
     .team-panel-title {
-      font-size: 0.75rem;
-      letter-spacing: 0.08em;
-      opacity: 0.7;
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      opacity: 0.56;
       text-transform: uppercase;
+    }
+
+    .team-panel-subtitle {
+      margin-top: 6px;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: rgba(255,255,255,0.68);
+      max-width: 28ch;
+    }
+
+    .team-close-btn {
+      width: 34px;
+      height: 34px;
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.58);
+      cursor: pointer;
+      transition: border-color 160ms var(--ease-out-quart), color 160ms var(--ease-out-quart), background-color 160ms var(--ease-out-quart), transform 120ms var(--ease-out-quart);
+    }
+
+    .team-close-btn:hover {
+      border-color: rgba(255,255,255,0.24);
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.92);
+    }
+
+    .team-close-btn:active {
+      transform: scale(0.97);
+    }
+
+    .team-close-btn svg {
+      width: 12px;
+      height: 12px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+    }
+
+    .team-panel-section {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .team-section-title {
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.46);
     }
 
     .team-panel input[type='text'],
     .room-link-field {
       width: 100%;
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 6px;
-      padding: 6px 8px;
-      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.04);
       color: #fff;
       font: inherit;
-      font-size: 0.78rem;
+      font-size: 0.8rem;
+    }
+
+    .team-panel input[type='text']:focus,
+    .room-link-field:focus {
+      border-color: rgba(255,255,255,0.22);
     }
 
     .team-row {
       display: flex;
-      gap: 6px;
-      align-items: center;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
     }
 
     .team-row label {
-      font-size: 0.74rem;
-      letter-spacing: 0.05em;
-      opacity: 0.7;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      opacity: 0.5;
       display: block;
-      margin-bottom: 4px;
       text-transform: uppercase;
     }
 
     .team-actions {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .team-actions button {
+      min-height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      color: rgba(255,255,255,0.82);
+      font-size: 0.66rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0 10px;
+    }
+
+    .team-actions button:hover {
+      border-color: rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+    }
+
+    .team-actions button:last-child {
+      grid-column: 1 / -1;
     }
 
     .team-members {
-      max-height: 96px;
+      min-height: 88px;
+      max-height: 150px;
       overflow: auto;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 8px;
-      padding: 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .team-member {
-      display: inline-flex;
-      gap: 6px;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.78rem;
-      opacity: 0.9;
-    }
-
-    .team-member-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-
-    .team-member-meta {
-      opacity: 0.45;
-      text-transform: uppercase;
-      font-size: 0.66rem;
-      letter-spacing: 0.08em;
-    }
-
-    .team-status {
-      min-height: 1em;
-      font-size: 0.72rem;
-      opacity: 0.6;
-    }
-
-    .team-permissions {
-      border: 1px dashed rgba(255,255,255,0.16);
-      border-radius: 8px;
-      padding: 6px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 4px;
+      background: rgba(0,0,0,0.18);
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
 
+    .team-member {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      font-size: 0.8rem;
+    }
+
+    .team-member-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      color: rgba(255,255,255,0.88);
+    }
+
+    .team-member-meta {
+      flex: none;
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+    }
+
+    .team-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 78px;
+      padding: 12px;
+      text-align: center;
+      color: rgba(255,255,255,0.42);
+      font-size: 0.74rem;
+      line-height: 1.5;
+    }
+
+    .team-status {
+      display: none;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.45;
+    }
+
+    .team-status:not(:empty) {
+      display: block;
+    }
+
+    .team-permissions {
+      gap: 8px;
+    }
+
     .team-permissions.hidden { display: none; }
 
     .team-permissions label {
-      font-size: 0.74rem;
+      font-size: 0.76rem;
       display: flex;
       align-items: center;
-      gap: 6px;
-      opacity: 0.9;
+      gap: 8px;
+      color: rgba(255,255,255,0.82);
       text-transform: none;
       margin: 0;
       letter-spacing: 0;
@@ -645,7 +766,7 @@
       .team-panel {
         top: 56px;
         right: 20px;
-        width: min(330px, calc(100vw - 40px));
+        width: min(360px, calc(100vw - 40px));
       }
     }
 
@@ -1098,21 +1219,40 @@
   <body>
   <h1 class="visually-hidden">Demo Timer, cronómetro por secciones para presentaciones y sesiones en vivo</h1>
 
-  <aside id="teamPanel" class="team-panel hidden" aria-live="polite">
-    <div class="team-panel-title">Sesión en tiempo real</div>
-    <div class="team-row">
-      <label for="memberNameInput">Nombre</label>
-      <input id="memberNameInput" type="text" maxlength="32" placeholder="Tu nombre" />
+  <aside id="teamPanel" class="team-panel hidden" aria-live="polite" aria-labelledby="teamPanelTitle">
+    <div class="team-panel-header">
+      <div>
+        <div id="teamPanelTitle" class="team-panel-title">Colaboración en vivo</div>
+        <p class="team-panel-subtitle">Comparte el timer, coordina cambios y deja que cada invitado vea el mismo estado.</p>
+      </div>
+      <button id="teamCloseBtn" class="team-close-btn" type="button" aria-label="Cerrar panel de colaboración">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M4 4l8 8"></path>
+          <path d="M12 4 4 12"></path>
+        </svg>
+      </button>
     </div>
-    <div class="team-actions">
-      <button id="shareRoomBtn" type="button">Crear / Compartir</button>
-      <button id="copyRoomBtn" type="button" disabled>Copiar link</button>
-      <button id="leaveRoomBtn" type="button">Salir</button>
+    <div class="team-panel-section">
+      <div class="team-row">
+        <label for="memberNameInput">Alias visible</label>
+        <input id="memberNameInput" type="text" maxlength="32" placeholder="Ej: Norte 42" />
+      </div>
     </div>
-    <input id="roomLinkField" class="room-link-field" type="text" readonly value="" aria-label="Link de la sesión" />
-    <p id="teamStatus" class="team-status"></p>
-    <div id="teamMembers" class="team-members" aria-label="Participantes conectados"></div>
-    <div id="teamPermissionsPanel" class="team-permissions hidden" aria-label="Permisos de invitados">
+    <div class="team-panel-section">
+      <div class="team-actions">
+        <button id="shareRoomBtn" type="button">Crear sala</button>
+        <button id="copyRoomBtn" type="button" disabled>Copiar enlace</button>
+        <button id="leaveRoomBtn" type="button">Salir de la sala</button>
+      </div>
+      <input id="roomLinkField" class="room-link-field" type="text" readonly value="" aria-label="Link de la sesión" />
+      <p id="teamStatus" class="team-status"></p>
+    </div>
+    <div class="team-panel-section">
+      <div class="team-section-title">Participantes conectados</div>
+      <div id="teamMembers" class="team-members" aria-label="Participantes conectados"></div>
+    </div>
+    <div id="teamPermissionsPanel" class="team-panel-section team-permissions hidden" aria-label="Permisos de invitados">
+      <div class="team-section-title">Permisos invitados</div>
       <label><input id="permPlayInput" type="checkbox" checked>Invitados inician/pausan</label>
       <label><input id="permNextInput" type="checkbox" checked>Siguiente sección</label>
       <label><input id="permResetInput" type="checkbox" checked>Reiniciar</label>
@@ -1124,14 +1264,15 @@
   <header class="bar-area" role="banner" aria-label="Indicador de progreso por secciones">
     <div class="timeline" id="timeline"></div>
     <div class="timeline-labels" id="timelineLabels"></div>
-    <button id="teamButton" class="team-btn" type="button" aria-label="Abrir sesión en tiempo real" aria-controls="teamPanel" aria-expanded="false">
+    <button id="teamButton" class="team-btn" type="button" aria-label="Abrir panel de colaboración" aria-controls="teamPanel" aria-expanded="false">
       <svg class="team-btn__icon" viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="5" cy="5.2" r="2.1"></circle>
-        <circle cx="11.2" cy="6.3" r="1.7"></circle>
-        <path d="M1.9 12.4c0-2.1 2-3.4 4.2-3.4s4.2 1.3 4.2 3.4"></path>
-        <path d="M9 11.9c.3-1.4 1.7-2.3 3.2-2.3 1 0 1.8.2 2.4.8"></path>
+        <circle cx="4.2" cy="8" r="1.8"></circle>
+        <circle cx="11.8" cy="4.5" r="1.8"></circle>
+        <circle cx="11.8" cy="11.5" r="1.8"></circle>
+        <path d="M5.8 7.2 10 5.2"></path>
+        <path d="M5.8 8.8 10 10.8"></path>
       </svg>
-      <span class="team-btn__label">En vivo</span>
+      <span class="team-btn__label">Colaborar</span>
     </button>
   </header>
 
@@ -1303,6 +1444,7 @@
       colorDanger: document.getElementById('colorDanger'),
       teamButton: document.getElementById('teamButton'),
       teamPanel: document.getElementById('teamPanel'),
+      teamCloseBtn: document.getElementById('teamCloseBtn'),
       memberNameInput: document.getElementById('memberNameInput'),
       shareRoomBtn: document.getElementById('shareRoomBtn'),
       copyRoomBtn: document.getElementById('copyRoomBtn'),
@@ -1331,7 +1473,7 @@
     const HOST_PARAM = 'h';
     const PROFILE_KEY = 'demo-timer-profile-v1';
     const ROOM_HOST_TOKENS_KEY = 'demo-timer-room-host-tokens-v1';
-    const TEAM_ICONS = ['🧑', '👩', '🧑‍💼', '👨‍💻', '🎯', '🚀', '🦊', '🐱', '🌟', '🧠', '🛠', '🍀'];
+    const TEAM_ALIAS_WORDS = ['Atlas', 'Brisa', 'Cobalto', 'Delta', 'Faro', 'Lumen', 'Nexo', 'Norte', 'Pulso', 'Ritmo', 'Trama', 'Vértice'];
     const qs = new URLSearchParams(location.search);
     const queryRoomId = (qs.get(ROOM_PARAM) || '').trim();
     const queryHostToken = (qs.get(HOST_PARAM) || '').trim();
@@ -1362,30 +1504,86 @@
       return hash;
     }
 
-    function iconFromProfile(profile) {
-      return TEAM_ICONS[hashFromSeed(`${profile?.name}-${profile?.iconSeed}`) % TEAM_ICONS.length];
+    function createGuestAlias(seed = Math.random().toString(36).slice(2, 10)) {
+      const hash = hashFromSeed(seed);
+      return `${TEAM_ALIAS_WORDS[hash % TEAM_ALIAS_WORDS.length]} ${String((hash % 90) + 10).padStart(2, '0')}`;
+    }
+
+    function normalizeProfileName(nameInput, seed = Math.random().toString(36).slice(2, 10)) {
+      const name = String(nameInput || '').trim().slice(0, 32);
+      if (name && name.toLowerCase() !== 'invitado') return name;
+      return createGuestAlias(seed);
     }
 
     function getStoredProfile() {
       const raw = localStorage.getItem(PROFILE_KEY);
       if (!raw) {
-        const profile = { name: 'Invitado', iconSeed: `p-${Math.random().toString(36).slice(2, 10)}` };
+        const iconSeed = `p-${Math.random().toString(36).slice(2, 10)}`;
+        const profile = { name: createGuestAlias(iconSeed), iconSeed };
         localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
         return profile;
       }
       try {
+        const iconSeed = String(JSON.parse(raw).iconSeed || `p-${Math.random().toString(36).slice(2, 10)}`);
         const parsed = JSON.parse(raw);
-        return {
-          name: String(parsed.name || 'Invitado').slice(0, 32),
-          iconSeed: String(parsed.iconSeed || `p-${Math.random().toString(36).slice(2, 10)}`)
+        const profile = {
+          name: normalizeProfileName(parsed.name, iconSeed),
+          iconSeed
         };
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+        return profile;
       } catch (_e) {
-        return { name: 'Invitado', iconSeed: `p-${Math.random().toString(36).slice(2, 10)}` };
+        const iconSeed = `p-${Math.random().toString(36).slice(2, 10)}`;
+        const profile = { name: createGuestAlias(iconSeed), iconSeed };
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+        return profile;
       }
     }
 
     function saveProfile(profile) {
       localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    }
+
+    function renderMembers(list) {
+      if (!el.teamMembers) return;
+      el.teamMembers.innerHTML = '';
+      const members = Array.isArray(list) ? list : [];
+      if (!members.length) {
+        const empty = document.createElement('div');
+        empty.className = 'team-empty';
+        empty.textContent = 'Aún no hay participantes conectados.';
+        el.teamMembers.appendChild(empty);
+        return;
+      }
+      members.forEach((member) => {
+        const row = document.createElement('div');
+        row.className = 'team-member';
+
+        const left = document.createElement('span');
+        left.className = 'team-member-name';
+        left.textContent = normalizeProfileName(member?.name, member?.iconSeed || member?.id || member?.role || 'guest');
+        row.appendChild(left);
+
+        const right = document.createElement('span');
+        right.className = 'team-member-meta';
+        right.textContent = member.role || 'guest';
+        row.appendChild(right);
+
+        el.teamMembers.appendChild(row);
+      });
+    }
+
+    function setTeamStatus(message) {
+      if (!el.teamStatus) return;
+      el.teamStatus.textContent = message || '';
+    }
+
+    function setTeamPanelOpen(isOpen) {
+      if (!el.teamPanel) return;
+      el.teamPanel.classList.toggle('hidden', !isOpen);
+      if (!el.teamButton) return;
+      el.teamButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      el.teamButton.setAttribute('aria-label', `${isOpen ? 'Ocultar' : 'Abrir'} panel de colaboración`);
     }
 
     function loadHostTokenForRoom(roomId) {
@@ -1460,19 +1658,6 @@
       });
     }
 
-    function setTeamStatus(message) {
-      if (!el.teamStatus) return;
-      el.teamStatus.textContent = message || '';
-    }
-
-    function setTeamPanelOpen(isOpen) {
-      if (!el.teamPanel) return;
-      el.teamPanel.classList.toggle('hidden', !isOpen);
-      if (!el.teamButton) return;
-      el.teamButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      el.teamButton.setAttribute('aria-label', `${isOpen ? 'Ocultar' : 'Abrir'} sesión en tiempo real`);
-    }
-
     function updateRoomLink() {
       if (!collab.roomId) {
         el.roomLinkField.value = '';
@@ -1487,27 +1672,6 @@
       target.search = params.toString();
       history.replaceState({}, '', target.toString());
       return link;
-    }
-
-    function renderMembers(list) {
-      if (!el.teamMembers) return;
-      el.teamMembers.innerHTML = '';
-      (Array.isArray(list) ? list : []).forEach((member) => {
-        const row = document.createElement('div');
-        row.className = 'team-member';
-
-        const left = document.createElement('span');
-        left.className = 'team-member-name';
-        left.textContent = `${iconFromProfile(member)} ${member?.name || 'Invitado'}`;
-        row.appendChild(left);
-
-        const right = document.createElement('span');
-        right.className = 'team-member-meta';
-        right.textContent = member.role || 'guest';
-        row.appendChild(right);
-
-        el.teamMembers.appendChild(row);
-      });
     }
 
     function canSendToServer() {
@@ -1546,7 +1710,7 @@
     }
 
     function updateRoomProfile(nameInput = collab.profile.name) {
-      collab.profile.name = String(nameInput || 'Invitado').slice(0, 32);
+      collab.profile.name = normalizeProfileName(nameInput || collab.profile.name, collab.profile.iconSeed);
       saveProfile(collab.profile);
       if (el.memberNameInput && el.memberNameInput.value !== collab.profile.name) el.memberNameInput.value = collab.profile.name;
       if (canSendToServer()) {
@@ -2387,6 +2551,9 @@
     el.permEditInput?.addEventListener('change', applyPermissionsUpdate);
     el.teamButton?.addEventListener('click', () => {
       setTeamPanelOpen(el.teamPanel?.classList.contains('hidden'));
+    });
+    el.teamCloseBtn?.addEventListener('click', () => {
+      setTeamPanelOpen(false);
     });
 
     if (el.teamPanel?.classList.contains('hidden') && queryRoomId) {
