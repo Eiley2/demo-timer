@@ -27,7 +27,7 @@
     property="og:description"
     content="Gestioná tu tiempo por bloques con una vista de progreso clara y controles rápidos para iniciar, pausar y avanzar secciones."
   />
-  <meta property="og:url" content="https://github.com/Eiley2/demo-timer" />
+  <meta property="og:url" id="og-url" content="https://demos.eiley.dev" />
   <meta property="og:image" content="https://github.com/Eiley2.png" />
   <meta property="og:image:alt" content="Demo Timer en pantalla con barras de progreso por secciones." />
   <meta property="og:image:width" content="1200" />
@@ -41,10 +41,10 @@
     content="Cronómetro de presentación con secciones, barra de progreso y estado en vivo para controlar tus sesiones."
   />
   <meta name="twitter:image" content="https://github.com/Eiley2.png" />
-  <link rel="canonical" href="https://github.com/Eiley2/demo-timer" />
-  <link rel="alternate" href="https://github.com/Eiley2/demo-timer" hreflang="es" />
+  <link rel="canonical" id="canonical-url" href="https://demos.eiley.dev" />
+  <link rel="alternate" id="alternate-url" href="https://demos.eiley.dev" hreflang="es" />
 
-  <script type="application/ld+json">
+  <script type="application/ld+json" id="ld-json-app">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
@@ -52,7 +52,7 @@
       "applicationCategory": "ProductivityApplication",
       "operatingSystem": "Web",
       "description": "Cronómetro por secciones para presentaciones y sesiones con control de avance por bloques, temporizador total y progreso visual.",
-      "url": "https://github.com/Eiley2/demo-timer",
+      "url": "https://demos.eiley.dev",
       "author": {
         "@type": "Person",
         "name": "Erik Sánchez",
@@ -60,16 +60,16 @@
       }
     }
   </script>
-  <script type="application/ld+json">
+  <script type="application/ld+json" id="ld-json-site">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "Demo Timer",
-      "url": "https://github.com/Eiley2/demo-timer",
+      "url": "https://demos.eiley.dev",
       "inLanguage": "es",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://github.com/Eiley2/demo-timer?query={search_term_string}",
+        "target": "https://demos.eiley.dev?query={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     }
@@ -997,6 +997,11 @@
     const el = {
       container: document.getElementById('segments'),
       targetInput: document.getElementById('targetMinutes'),
+      canonicalUrl: document.getElementById('canonical-url'),
+      alternateUrl: document.getElementById('alternate-url'),
+      ogUrl: document.getElementById('og-url'),
+      ldJsonApp: document.getElementById('ld-json-app'),
+      ldJsonSite: document.getElementById('ld-json-site'),
       sessionName: document.getElementById('sessionName'),
       startBtn: document.getElementById('startBtn'),
       nextBtn: document.getElementById('nextBtn'),
@@ -1033,6 +1038,34 @@
       completed: false,
       lastSectionIndex: -1
     };
+
+    function syncSeoForRuntime() {
+      const canonicalBase = window.location.hostname.includes('demos.eiley.dev')
+        ? window.location.origin
+        : 'https://demos.eiley.dev';
+      const normalizedPathname = window.location.pathname || '/';
+      const canonical = `${canonicalBase}${normalizedPathname}`;
+      if (el.canonicalUrl) el.canonicalUrl.href = canonical;
+      if (el.alternateUrl) el.alternateUrl.href = canonical;
+      if (el.ogUrl) el.ogUrl.setAttribute('content', canonical);
+
+      const applyUrlToJsonLd = (scriptEl, fallbackKey) => {
+        if (!scriptEl) return;
+        try {
+          const payload = JSON.parse(scriptEl.textContent);
+          if (fallbackKey === 'site' && payload.potentialAction?.target && typeof payload.potentialAction.target === 'string') {
+            payload.potentialAction.target = `${canonical}?query={search_term_string}`;
+          }
+          payload.url = canonical;
+          scriptEl.textContent = JSON.stringify(payload);
+        } catch (_e) {
+          return;
+        }
+      };
+
+      applyUrlToJsonLd(el.ldJsonApp, 'app');
+      applyUrlToJsonLd(el.ldJsonSite, 'site');
+    }
 
     const toMs = (min) => Math.max(0, Number(min) || 0) * 60000;
 
@@ -1549,6 +1582,7 @@
 
     loadStored();
     resetTimer();
+    syncSeoForRuntime();
   </script>
 </body>
 </html>
