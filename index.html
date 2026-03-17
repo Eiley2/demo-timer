@@ -169,10 +169,11 @@
     /* ── Top bar ── */
     .bar-area {
       width: 100%;
-      padding: 24px 32px 0;
+      padding: 24px 120px 0 32px;
       opacity: 0;
       animation: fadeRise 0.62s var(--ease-out-expo) forwards;
       animation-delay: 80ms;
+      position: relative;
     }
 
     .timeline {
@@ -414,22 +415,28 @@
     .actions button:disabled { opacity: 0.15; pointer-events: none; }
 
     .team-btn {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 12;
-      width: 38px;
-      height: 38px;
+      position: absolute;
+      top: 18px;
+      right: 32px;
+      z-index: 13;
+      min-height: 38px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px 0 11px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.05);
-      color: rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(10px);
+      color: rgba(255,255,255,0.84);
       cursor: pointer;
-      transition: transform 120ms var(--ease-out-quart), border-color 120ms var(--ease-out-quart), color 120ms var(--ease-out-quart);
+      transition: transform 120ms var(--ease-out-quart), border-color 160ms var(--ease-out-quart), color 160ms var(--ease-out-quart), background-color 160ms var(--ease-out-quart);
     }
 
-    .team-btn:hover {
-      border-color: rgba(255,255,255,0.45);
+    .team-btn:hover,
+    .team-btn[aria-expanded='true'] {
+      border-color: rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.08);
       color: rgba(255,255,255,1);
     }
 
@@ -437,10 +444,27 @@
       transform: scale(0.97);
     }
 
+    .team-btn__icon {
+      width: 14px;
+      height: 14px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .team-btn__label {
+      font-size: 0.64rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
     .team-panel {
       position: fixed;
-      top: 64px;
-      right: 16px;
+      top: 68px;
+      right: 32px;
       width: min(330px, calc(100vw - 28px));
       z-index: 12;
       border: 1px solid rgba(255,255,255,0.16);
@@ -602,6 +626,26 @@
         --config-max-height: 50vh;
         gap: 28px;
         overflow-y: auto;
+      }
+
+      .bar-area {
+        padding-right: 32px;
+      }
+
+      .team-btn {
+        top: 14px;
+        right: 20px;
+        width: 38px;
+        padding: 0;
+        justify-content: center;
+      }
+
+      .team-btn__label { display: none; }
+
+      .team-panel {
+        top: 56px;
+        right: 20px;
+        width: min(330px, calc(100vw - 40px));
       }
     }
 
@@ -1054,7 +1098,6 @@
   <body>
   <h1 class="visually-hidden">Demo Timer, cronómetro por secciones para presentaciones y sesiones en vivo</h1>
 
-  <button id="teamButton" class="team-btn" type="button" aria-label="Compartir sesión en tiempo real">👥</button>
   <aside id="teamPanel" class="team-panel hidden" aria-live="polite">
     <div class="team-panel-title">Sesión en tiempo real</div>
     <div class="team-row">
@@ -1081,6 +1124,15 @@
   <header class="bar-area" role="banner" aria-label="Indicador de progreso por secciones">
     <div class="timeline" id="timeline"></div>
     <div class="timeline-labels" id="timelineLabels"></div>
+    <button id="teamButton" class="team-btn" type="button" aria-label="Abrir sesión en tiempo real" aria-controls="teamPanel" aria-expanded="false">
+      <svg class="team-btn__icon" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="5" cy="5.2" r="2.1"></circle>
+        <circle cx="11.2" cy="6.3" r="1.7"></circle>
+        <path d="M1.9 12.4c0-2.1 2-3.4 4.2-3.4s4.2 1.3 4.2 3.4"></path>
+        <path d="M9 11.9c.3-1.4 1.7-2.3 3.2-2.3 1 0 1.8.2 2.4.8"></path>
+      </svg>
+      <span class="team-btn__label">En vivo</span>
+    </button>
   </header>
 
   <!-- Center: timer -->
@@ -1413,6 +1465,14 @@
       el.teamStatus.textContent = message || '';
     }
 
+    function setTeamPanelOpen(isOpen) {
+      if (!el.teamPanel) return;
+      el.teamPanel.classList.toggle('hidden', !isOpen);
+      if (!el.teamButton) return;
+      el.teamButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      el.teamButton.setAttribute('aria-label', `${isOpen ? 'Ocultar' : 'Abrir'} sesión en tiempo real`);
+    }
+
     function updateRoomLink() {
       if (!collab.roomId) {
         el.roomLinkField.value = '';
@@ -1535,10 +1595,10 @@
     }
 
     function leaveRoom() {
-      if (collab.socket) {
+      const hadSocket = !!collab.socket;
+      if (hadSocket) {
         collab.manualClose = true;
         try { collab.socket.close(); } catch (_e) {}
-        collab.socket = null;
       }
       const current = new URL(location.href);
       current.search = '';
@@ -1553,18 +1613,24 @@
       el.roomLinkField.value = '';
       el.copyRoomBtn.disabled = true;
       syncActionAccess();
-      collab.manualClose = false;
+      if (!hadSocket) {
+        setTeamStatus('Sesión local restaurada');
+        collab.manualClose = false;
+      }
     }
 
     function connectToRoom(roomId) {
-      if (collab.socket) {
-        try { collab.socket.close(); } catch (_e) {}
-        collab.socket = null;
+      const previousSocket = collab.socket;
+      if (previousSocket) {
+        try { previousSocket.close(); } catch (_e) {}
       }
+      collab.connected = false;
       collab.manualClose = false;
-      collab.socket = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/rooms/${encodeURIComponent(roomId)}/ws`);
+      const socket = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/rooms/${encodeURIComponent(roomId)}/ws`);
+      collab.socket = socket;
       setTeamStatus('Conectando...');
-      collab.socket.addEventListener('open', () => {
+      socket.addEventListener('open', () => {
+        if (collab.socket !== socket) return;
         sendToServer({
           type: 'join',
           roomId,
@@ -1573,7 +1639,8 @@
         });
         setTeamStatus('Conectado');
       });
-      collab.socket.addEventListener('message', (event) => {
+      socket.addEventListener('message', (event) => {
+        if (collab.socket !== socket) return;
         try {
           const msg = JSON.parse(event.data || '{}');
           if (msg.type === 'state') {
@@ -1588,7 +1655,8 @@
           setTeamStatus('Mensaje inválido');
         }
       });
-      collab.socket.addEventListener('close', () => {
+      socket.addEventListener('close', () => {
+        if (collab.socket !== socket) return;
         collab.connected = false;
         collab.socket = null;
         collab.role = 'guest';
@@ -1600,8 +1668,10 @@
         };
         setTeamStatus(collab.manualClose ? 'Sesión local restaurada' : 'Sin conexión en tiempo real');
         syncActionAccess();
+        collab.manualClose = false;
       });
-      collab.socket.addEventListener('error', () => {
+      socket.addEventListener('error', () => {
+        if (collab.socket !== socket) return;
         setTeamStatus('Error de conexión');
       });
       collab.roomId = roomId;
@@ -1610,6 +1680,7 @@
     function applyRemoteState(msg) {
       if (!msg || !msg.roomState) return;
       const roomState = msg.roomState;
+      const previousIndex = state.currentIndex;
       collab.connected = true;
       collab.role = msg.role || 'guest';
       if (msg.permissions) collab.permissions = msg.permissions;
@@ -1639,7 +1710,7 @@
         currentIndex: Number(roomState.currentIndex) || 0,
         currentMs: Number(roomState.currentMs) || 0,
         currentStart: Number(roomState.currentStart) || 0,
-        lastSectionIndex: -1
+        lastSectionIndex: previousIndex
       });
 
       if (state.running) {
@@ -2315,11 +2386,11 @@
     el.permResetInput?.addEventListener('change', applyPermissionsUpdate);
     el.permEditInput?.addEventListener('change', applyPermissionsUpdate);
     el.teamButton?.addEventListener('click', () => {
-      el.teamPanel.classList.toggle('hidden');
+      setTeamPanelOpen(el.teamPanel?.classList.contains('hidden'));
     });
 
     if (el.teamPanel?.classList.contains('hidden') && queryRoomId) {
-      el.teamPanel.classList.remove('hidden');
+      setTeamPanelOpen(true);
     }
 
     document.addEventListener('click', (e) => {
