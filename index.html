@@ -239,7 +239,9 @@
       border-bottom-right-radius: inherit;
     }
 
-    .timeline-seg.done { background: #26323d; }
+    .timeline-seg.done {
+      background: color-mix(in srgb, var(--color-bar) 24%, #111214);
+    }
 
     .timeline-seg.active {
       box-shadow: inset 0 0 0 1px #1a1c20;
@@ -298,9 +300,10 @@
       letter-spacing: 0.2em;
       text-transform: uppercase;
       opacity: 0.25;
-      margin-bottom: 8px;
+      margin-bottom: 20px;
       animation: timerReveal 0.52s var(--ease-out-expo) both;
       animation-delay: 230ms;
+      transition: margin 0.24s var(--ease-out-quart);
     }
 
     #totalTimerWrapper {
@@ -361,7 +364,11 @@
       opacity: 0;
       animation: fadeRise 0.5s var(--ease-out-quart) both;
       animation-delay: 360ms;
-      transition: opacity 0.24s var(--ease-out-quart), transform 0.24s var(--ease-out-quart), visibility 0.24s var(--ease-out-quart);
+      transition: opacity 0.24s var(--ease-out-quart), transform 0.24s var(--ease-out-quart), visibility 0.24s var(--ease-out-quart), min-height 0.24s var(--ease-out-quart), margin 0.24s var(--ease-out-quart);
+    }
+
+    .section-context[hidden] {
+      display: none;
     }
 
     .overtime .section-context {
@@ -369,6 +376,8 @@
       visibility: hidden;
       transform: translateY(-6px);
       pointer-events: none;
+      min-height: 0;
+      margin: 0;
     }
 
     .section-now {
@@ -399,6 +408,12 @@
       opacity: 0.3;
       margin-top: 8px;
       min-height: 1.2em;
+      transition: min-height 0.24s var(--ease-out-quart), margin 0.24s var(--ease-out-quart);
+    }
+
+    .overtime .done-label {
+      min-height: 0;
+      margin: 0;
     }
 
     @keyframes overtimePulse {
@@ -433,11 +448,15 @@
       text-transform: uppercase;
       color: var(--color-danger);
       opacity: 0;
-      margin-top: 6px;
+      margin-top: 24px;
       transition: opacity 0.3s var(--ease-out-quart);
     }
 
     .overtime .overtime-label { opacity: 0.7; }
+
+    .overtime .actions {
+      margin-top: 24px;
+    }
 
     .section-transition {
       animation: sectionTransition 0.38s var(--ease-out-quart) both;
@@ -451,7 +470,9 @@
     .danger #totalTimer,
     .danger #totalTimerSign { color: var(--color-danger); }
     .danger .timeline-progress { background: color-mix(in srgb, var(--color-danger) 82%, #140303); }
-    .danger .timeline-seg.done { background: #311518; }
+    .danger .timeline-seg.done {
+      background: color-mix(in srgb, var(--color-danger) 24%, #111214);
+    }
 
     .is-running .section-context,
     .is-running .section-now {
@@ -960,6 +981,52 @@
         right: 16px;
         left: 16px;
         width: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .timer-area {
+        padding: 16px 16px 24px;
+      }
+
+      .bar-area {
+        padding: 12px 16px 0;
+      }
+
+      .session-name {
+        font-size: 0.72rem;
+        letter-spacing: 0.16em;
+      }
+
+      .section-now {
+        font-size: calc(1.05rem * var(--section-scale));
+      }
+
+      .section-now .time {
+        font-size: calc(0.88rem * var(--section-scale));
+      }
+
+      .section-position {
+        font-size: calc(0.7rem * var(--section-scale));
+      }
+
+      .actions button {
+        padding: 7px 14px;
+        font-size: 0.74rem;
+      }
+
+      .timeline-labels span {
+        font-size: calc(0.6rem * var(--label-scale));
+      }
+
+      .timeline-labels {
+        gap: 4px;
+      }
+
+      .config {
+        padding: 0 16px 20px;
+        padding-top: 20px;
+        gap: 24px;
       }
     }
 
@@ -1496,7 +1563,7 @@
     <div class="session-name" id="sessionTitle">Demo</div>
     <div id="totalTimerWrapper"><span id="totalTimerSign" aria-hidden="true">&nbsp;</span><span id="totalTimer">30:00</span></div>
 
-    <div class="section-context">
+    <div class="section-context" id="sectionContext">
       <div class="section-now" id="sectionNow"></div>
       <div class="section-position" id="sectionPosition"></div>
     </div>
@@ -1642,6 +1709,7 @@
       totalTimerSign: document.getElementById('totalTimerSign'),
       totalTimer: document.getElementById('totalTimer'),
       sessionTitle: document.getElementById('sessionTitle'),
+      sectionContext: document.getElementById('sectionContext'),
       sectionNow: document.getElementById('sectionNow'),
       sectionPosition: document.getElementById('sectionPosition'),
       timeline: document.getElementById('timeline'),
@@ -2554,25 +2622,10 @@
       if (state.overtime) {
         const overtimeMs = state.running ? Date.now() - state.overtimeStart : state.overtimeElapsed;
         const overtimeIndex = sections.length ? Math.max(0, sections.length - 1) : -1;
-        const overtimeSection = overtimeIndex >= 0 ? sections[overtimeIndex] : null;
         setTimerDisplay(fmtOvertime(overtimeMs), overtimeMs, { negative: true });
-
-        if (overtimeSection) {
-          el.sectionNow.textContent = overtimeSection.name;
-          const timeNode = document.createElement('span');
-          timeNode.className = 'time';
-          timeNode.textContent = fmt(0);
-          timeNode.dataset.valueMs = '0';
-          el.sectionNow.appendChild(timeNode);
-
-          const next = sections[overtimeIndex + 1];
-          el.sectionPosition.textContent =
-            `${overtimeIndex + 1} de ${sections.length}` +
-            (next ? ` — siguiente: ${next.name}` : ' — esta es la última sección');
-        } else {
-          el.sectionNow.textContent = '';
-          el.sectionPosition.textContent = '';
-        }
+        el.sectionContext.hidden = true;
+        el.sectionNow.textContent = '';
+        el.sectionPosition.textContent = '';
         el.doneText.textContent = '';
         el.displayPanel.classList.add('danger', 'overtime');
         el.displayPanel.classList.remove('alerting');
@@ -2586,6 +2639,7 @@
         const zeroIndex = sections.length ? Math.min(state.currentIndex, sections.length - 1) : -1;
         const zeroSection = zeroIndex >= 0 ? sections[zeroIndex] : null;
         setTimerDisplay(fmt(0), 0);
+        el.sectionContext.hidden = false;
 
         if (zeroSection) {
           el.sectionNow.textContent = zeroSection.name;
@@ -2613,6 +2667,7 @@
 
       if (state.completed || sections.length === 0 || state.currentIndex >= sections.length) {
         setTimerDisplay(fmt(0), 0);
+        el.sectionContext.hidden = true;
         el.sectionNow.textContent = '';
         el.sectionPosition.textContent = '';
         el.doneText.textContent = state.completed ? 'Sesión terminada' : '';
@@ -2623,6 +2678,7 @@
         return;
       }
 
+      el.sectionContext.hidden = false;
       if (shouldAnimateNumbers && Number.isFinite(previousTotal) && previousTotal !== totalRemaining) {
         animateNumber(el.totalTimer, previousTotal, totalRemaining, fmtCountdown);
       } else {
