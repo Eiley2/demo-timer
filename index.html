@@ -413,6 +413,147 @@
 
     .actions button:disabled { opacity: 0.15; pointer-events: none; }
 
+    .team-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 12;
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.8);
+      cursor: pointer;
+      transition: transform 120ms var(--ease-out-quart), border-color 120ms var(--ease-out-quart), color 120ms var(--ease-out-quart);
+    }
+
+    .team-btn:hover {
+      border-color: rgba(255,255,255,0.45);
+      color: rgba(255,255,255,1);
+    }
+
+    .team-btn:active {
+      transform: scale(0.97);
+    }
+
+    .team-panel {
+      position: fixed;
+      top: 64px;
+      right: 16px;
+      width: min(330px, calc(100vw - 28px));
+      z-index: 12;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(0,0,0,0.82);
+      backdrop-filter: blur(10px);
+      padding: 12px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 14px 35px rgba(0,0,0,0.35);
+    }
+
+    .team-panel.hidden { display: none; }
+
+    .team-panel-title {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      opacity: 0.7;
+      text-transform: uppercase;
+    }
+
+    .team-panel input[type='text'],
+    .room-link-field {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px;
+      padding: 6px 8px;
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      font: inherit;
+      font-size: 0.78rem;
+    }
+
+    .team-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .team-row label {
+      font-size: 0.74rem;
+      letter-spacing: 0.05em;
+      opacity: 0.7;
+      display: block;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .team-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .team-members {
+      max-height: 96px;
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .team-member {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      opacity: 0.9;
+    }
+
+    .team-member-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+
+    .team-member-meta {
+      opacity: 0.45;
+      text-transform: uppercase;
+      font-size: 0.66rem;
+      letter-spacing: 0.08em;
+    }
+
+    .team-status {
+      min-height: 1em;
+      font-size: 0.72rem;
+      opacity: 0.6;
+    }
+
+    .team-permissions {
+      border: 1px dashed rgba(255,255,255,0.16);
+      border-radius: 8px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .team-permissions.hidden { display: none; }
+
+    .team-permissions label {
+      font-size: 0.74rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0.9;
+      text-transform: none;
+      margin: 0;
+      letter-spacing: 0;
+    }
+
     .actions button.primary {
       border-color: rgba(255,255,255,0.25);
       color: rgba(255,255,255,0.85);
@@ -910,8 +1051,31 @@
     }
   </style>
 </head>
-<body>
+  <body>
   <h1 class="visually-hidden">Demo Timer, cronómetro por secciones para presentaciones y sesiones en vivo</h1>
+
+  <button id="teamButton" class="team-btn" type="button" aria-label="Compartir sesión en tiempo real">👥</button>
+  <aside id="teamPanel" class="team-panel hidden" aria-live="polite">
+    <div class="team-panel-title">Sesión en tiempo real</div>
+    <div class="team-row">
+      <label for="memberNameInput">Nombre</label>
+      <input id="memberNameInput" type="text" maxlength="32" placeholder="Tu nombre" />
+    </div>
+    <div class="team-actions">
+      <button id="shareRoomBtn" type="button">Crear / Compartir</button>
+      <button id="copyRoomBtn" type="button" disabled>Copiar link</button>
+      <button id="leaveRoomBtn" type="button">Salir</button>
+    </div>
+    <input id="roomLinkField" class="room-link-field" type="text" readonly value="" aria-label="Link de la sesión" />
+    <p id="teamStatus" class="team-status"></p>
+    <div id="teamMembers" class="team-members" aria-label="Participantes conectados"></div>
+    <div id="teamPermissionsPanel" class="team-permissions hidden" aria-label="Permisos de invitados">
+      <label><input id="permPlayInput" type="checkbox" checked>Invitados inician/pausan</label>
+      <label><input id="permNextInput" type="checkbox" checked>Siguiente sección</label>
+      <label><input id="permResetInput" type="checkbox" checked>Reiniciar</label>
+      <label><input id="permEditInput" type="checkbox" checked>Editar configuración</label>
+    </div>
+  </aside>
 
   <!-- Top: progress bar -->
   <header class="bar-area" role="banner" aria-label="Indicador de progreso por secciones">
@@ -1084,7 +1248,21 @@
       colorTimer: document.getElementById('colorTimer'),
       colorSection: document.getElementById('colorSection'),
       colorBar: document.getElementById('colorBar'),
-      colorDanger: document.getElementById('colorDanger')
+      colorDanger: document.getElementById('colorDanger'),
+      teamButton: document.getElementById('teamButton'),
+      teamPanel: document.getElementById('teamPanel'),
+      memberNameInput: document.getElementById('memberNameInput'),
+      shareRoomBtn: document.getElementById('shareRoomBtn'),
+      copyRoomBtn: document.getElementById('copyRoomBtn'),
+      leaveRoomBtn: document.getElementById('leaveRoomBtn'),
+      roomLinkField: document.getElementById('roomLinkField'),
+      teamStatus: document.getElementById('teamStatus'),
+      teamMembers: document.getElementById('teamMembers'),
+      permissionsPanel: document.getElementById('teamPermissionsPanel'),
+      permPlayInput: document.getElementById('permPlayInput'),
+      permNextInput: document.getElementById('permNextInput'),
+      permResetInput: document.getElementById('permResetInput'),
+      permEditInput: document.getElementById('permEditInput')
     };
 
     const state = {
@@ -1096,6 +1274,405 @@
       completed: false,
       lastSectionIndex: -1
     };
+
+    const ROOM_PARAM = 'room';
+    const HOST_PARAM = 'h';
+    const PROFILE_KEY = 'demo-timer-profile-v1';
+    const ROOM_HOST_TOKENS_KEY = 'demo-timer-room-host-tokens-v1';
+    const TEAM_ICONS = ['🧑', '👩', '🧑‍💼', '👨‍💻', '🎯', '🚀', '🦊', '🐱', '🌟', '🧠', '🛠', '🍀'];
+    const qs = new URLSearchParams(location.search);
+    const queryRoomId = (qs.get(ROOM_PARAM) || '').trim();
+    const queryHostToken = (qs.get(HOST_PARAM) || '').trim();
+    let remoteConfigVersion = -1;
+
+    const collab = {
+      connected: false,
+      roomId: '',
+      hostToken: '',
+      role: 'guest',
+      socket: null,
+      manualClose: false,
+      profile: getStoredProfile(),
+      permissions: {
+        guestCanPlay: true,
+        guestCanNext: true,
+        guestCanReset: true,
+        guestCanEdit: true
+      }
+    };
+
+    function hashFromSeed(seed) {
+      let hash = 0;
+      const text = String(seed || '');
+      for (let i = 0; i < text.length; i++) {
+        hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+      }
+      return hash;
+    }
+
+    function iconFromProfile(profile) {
+      return TEAM_ICONS[hashFromSeed(`${profile?.name}-${profile?.iconSeed}`) % TEAM_ICONS.length];
+    }
+
+    function getStoredProfile() {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (!raw) {
+        const profile = { name: 'Invitado', iconSeed: `p-${Math.random().toString(36).slice(2, 10)}` };
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+        return profile;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        return {
+          name: String(parsed.name || 'Invitado').slice(0, 32),
+          iconSeed: String(parsed.iconSeed || `p-${Math.random().toString(36).slice(2, 10)}`)
+        };
+      } catch (_e) {
+        return { name: 'Invitado', iconSeed: `p-${Math.random().toString(36).slice(2, 10)}` };
+      }
+    }
+
+    function saveProfile(profile) {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    }
+
+    function loadHostTokenForRoom(roomId) {
+      const raw = localStorage.getItem(ROOM_HOST_TOKENS_KEY);
+      if (!raw) return '';
+      try {
+        const map = JSON.parse(raw) || {};
+        return map[String(roomId)] || '';
+      } catch (_e) {
+        return '';
+      }
+    }
+
+    function saveHostTokenForRoom(roomId, token) {
+      if (!roomId) return;
+      const raw = localStorage.getItem(ROOM_HOST_TOKENS_KEY);
+      const map = raw ? (() => { try { return JSON.parse(raw) || {}; } catch (_e) { return {}; } })() : {};
+      map[String(roomId)] = String(token || '');
+      localStorage.setItem(ROOM_HOST_TOKENS_KEY, JSON.stringify(map));
+    }
+
+    function removeHostTokenForRoom(roomId) {
+      const raw = localStorage.getItem(ROOM_HOST_TOKENS_KEY);
+      if (!raw) return;
+      try {
+        const map = JSON.parse(raw) || {};
+        delete map[String(roomId)];
+        localStorage.setItem(ROOM_HOST_TOKENS_KEY, JSON.stringify(map));
+      } catch (_e) {}
+    }
+
+    function syncActionAccess() {
+      const isHost = collab.role === 'host';
+      const canPlay = isHost || !!collab.permissions.guestCanPlay;
+      const canNext = isHost || !!collab.permissions.guestCanNext;
+      const canReset = isHost || !!collab.permissions.guestCanReset;
+      const canEdit = isHost || !collab.connected || !!collab.permissions.guestCanEdit;
+
+      el.startBtn.disabled = collab.connected && !canPlay;
+      el.nextBtn.disabled = collab.connected && !canNext;
+      el.resetBtn.disabled = collab.connected && !canReset;
+      if (!collab.connected) el.nextBtn.disabled = parseSections().length < 2;
+      if (!collab.connected) {
+        el.startBtn.textContent = state.running ? 'Pausar' : 'Iniciar';
+      }
+
+      if (isHost) {
+        el.permissionsPanel.classList.remove('hidden');
+      } else {
+        el.permissionsPanel.classList.add('hidden');
+      }
+
+      if (el.permPlayInput) el.permPlayInput.checked = !!collab.permissions.guestCanPlay;
+      if (el.permNextInput) el.permNextInput.checked = !!collab.permissions.guestCanNext;
+      if (el.permResetInput) el.permResetInput.checked = !!collab.permissions.guestCanReset;
+      if (el.permEditInput) el.permEditInput.checked = !!collab.permissions.guestCanEdit;
+
+      [el.sessionName, el.targetInput, el.alertThreshold, el.alertThresholdUnit, el.addSection, el.loadDefault,
+       el.timerScale, el.sectionScale, el.labelScale, el.barHeight, el.colorTimer, el.colorSection,
+       el.colorBar, el.colorDanger]
+        .filter(Boolean)
+        .forEach((node) => {
+          if (node.tagName === 'BUTTON' && node.closest('.unit-btn')) return;
+          node.disabled = collab.connected && !canEdit;
+        });
+
+      el.container.querySelectorAll('.section-row').forEach((row) => {
+        row.querySelector('.sectionName')?.toggleAttribute('disabled', collab.connected && !canEdit);
+        row.querySelector('.sectionMinutes')?.toggleAttribute('disabled', collab.connected && !canEdit);
+        row.querySelector('.unit-btn')?.toggleAttribute('disabled', collab.connected && !canEdit);
+        row.querySelector('.remove')?.toggleAttribute('disabled', collab.connected && !canEdit);
+      });
+    }
+
+    function setTeamStatus(message) {
+      if (!el.teamStatus) return;
+      el.teamStatus.textContent = message || '';
+    }
+
+    function updateRoomLink() {
+      if (!collab.roomId) {
+        el.roomLinkField.value = '';
+        el.copyRoomBtn.disabled = true;
+        return;
+      }
+      const params = new URLSearchParams({ [ROOM_PARAM]: collab.roomId });
+      if (collab.hostToken && collab.role === 'host') params.set(HOST_PARAM, collab.hostToken);
+      const link = `${location.origin}${location.pathname}?${params.toString()}`;
+      el.roomLinkField.value = link;
+      el.copyRoomBtn.disabled = false;
+      const target = new URL(location.href);
+      target.search = params.toString();
+      history.replaceState({}, '', target.toString());
+      return link;
+    }
+
+    function renderMembers(list) {
+      if (!el.teamMembers) return;
+      el.teamMembers.innerHTML = '';
+      (Array.isArray(list) ? list : []).forEach((member) => {
+        const row = document.createElement('div');
+        row.className = 'team-member';
+
+        const left = document.createElement('span');
+        left.className = 'team-member-name';
+        left.textContent = `${iconFromProfile(member)} ${member?.name || 'Invitado'}`;
+        row.appendChild(left);
+
+        const right = document.createElement('span');
+        right.className = 'team-member-meta';
+        right.textContent = member.role || 'guest';
+        row.appendChild(right);
+
+        el.teamMembers.appendChild(row);
+      });
+    }
+
+    function canSendToServer() {
+      return collab.connected && collab.socket && collab.socket.readyState === WebSocket.OPEN;
+    }
+
+    function sendToServer(payload) {
+      if (!canSendToServer()) return false;
+      try {
+        collab.socket.send(JSON.stringify(payload));
+        return true;
+      } catch (_e) {
+        return false;
+      }
+    }
+
+    function sendAction(action, payload = {}) {
+      return sendToServer({ type: 'action', action, payload });
+    }
+
+    function applyPermissionsUpdate() {
+      if (!collab.connected || collab.role !== 'host' || !canSendToServer()) return;
+      const permissions = {
+        guestCanPlay: !!el.permPlayInput?.checked,
+        guestCanNext: !!el.permNextInput?.checked,
+        guestCanReset: !!el.permResetInput?.checked,
+        guestCanEdit: !!el.permEditInput?.checked
+      };
+      collab.permissions = permissions;
+      sendToServer({ type: 'permissions', permissions });
+      syncActionAccess();
+    }
+
+    function updateRoomProfile(nameInput = collab.profile.name) {
+      collab.profile.name = String(nameInput || 'Invitado').slice(0, 32);
+      saveProfile(collab.profile);
+      if (el.memberNameInput && el.memberNameInput.value !== collab.profile.name) el.memberNameInput.value = collab.profile.name;
+      if (canSendToServer()) {
+        sendToServer({ type: 'profile', profile: collab.profile });
+      }
+    }
+
+    function syncProfileToPanel() {
+      if (el.memberNameInput) el.memberNameInput.value = collab.profile.name;
+    }
+
+    function createRoomConfigPayload() {
+      const sections = parseSections();
+      return {
+        name: el.sessionName.value || 'Demo',
+        target: Number(el.targetInput.value) || 30,
+        alertThreshold: Number(el.alertThreshold.value) || 30,
+        alertThresholdUnit: el.alertThresholdUnit?.dataset?.unit || 'seg',
+        sections,
+        profile: collab.profile,
+        permissions: collab.permissions
+      };
+    }
+
+    async function createRoom() {
+      const response = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(createRoomConfigPayload())
+      });
+      if (!response.ok) throw new Error('No se pudo crear la sesión');
+      const data = await response.json();
+      collab.roomId = String(data.roomId || '');
+      collab.hostToken = String(data.hostToken || '');
+      saveHostTokenForRoom(collab.roomId, collab.hostToken);
+      collab.role = 'host';
+      collab.permissions = {
+        guestCanPlay: true,
+        guestCanNext: true,
+        guestCanReset: true,
+        guestCanEdit: true
+      };
+      connectToRoom(collab.roomId);
+      updateRoomLink();
+      return collab.roomId;
+    }
+
+    function leaveRoom() {
+      if (collab.socket) {
+        collab.manualClose = true;
+        try { collab.socket.close(); } catch (_e) {}
+        collab.socket = null;
+      }
+      const current = new URL(location.href);
+      current.search = '';
+      history.replaceState({}, '', current.toString());
+      collab.connected = false;
+      collab.roomId = '';
+      collab.hostToken = '';
+      collab.role = 'guest';
+      remoteConfigVersion = -1;
+      if (el.teamMembers) el.teamMembers.innerHTML = '';
+      setTeamStatus('');
+      el.roomLinkField.value = '';
+      el.copyRoomBtn.disabled = true;
+      syncActionAccess();
+      collab.manualClose = false;
+    }
+
+    function connectToRoom(roomId) {
+      if (collab.socket) {
+        try { collab.socket.close(); } catch (_e) {}
+      }
+      collab.manualClose = false;
+      collab.socket = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/rooms/${encodeURIComponent(roomId)}/ws`);
+      setTeamStatus('Conectando...');
+      collab.socket.addEventListener('open', () => {
+        sendToServer({
+          type: 'join',
+          roomId,
+          hostToken: collab.hostToken || '',
+          profile: collab.profile
+        });
+        setTeamStatus('Conectado');
+      });
+      collab.socket.addEventListener('message', (event) => {
+        try {
+          const msg = JSON.parse(event.data || '{}');
+          if (msg.type === 'state') {
+            applyRemoteState(msg);
+            return;
+          }
+          if (msg.type === 'error') {
+            setTeamStatus(msg.message || 'Acción no válida');
+            return;
+          }
+        } catch (_e) {
+          setTeamStatus('Mensaje inválido');
+        }
+      });
+      collab.socket.addEventListener('close', () => {
+        collab.connected = false;
+        collab.role = 'guest';
+        collab.permissions = {
+          guestCanPlay: true,
+          guestCanNext: true,
+          guestCanReset: true,
+          guestCanEdit: true
+        };
+        setTeamStatus(collab.manualClose ? 'Sesión local restaurada' : 'Sin conexión en tiempo real');
+        syncActionAccess();
+      });
+      collab.socket.addEventListener('error', () => {
+        setTeamStatus('Error de conexión');
+      });
+      collab.roomId = roomId;
+    }
+
+    function applyRemoteState(msg) {
+      if (!msg || !msg.roomState) return;
+      const roomState = msg.roomState;
+      collab.connected = true;
+      collab.role = msg.role || 'guest';
+      if (msg.permissions) collab.permissions = msg.permissions;
+      renderMembers(msg.members || []);
+      updateRoomLink();
+
+      if (roomState.configVersion !== remoteConfigVersion) {
+        remoteConfigVersion = roomState.configVersion || 0;
+        el.sessionName.value = roomState.name || 'Demo';
+        el.targetInput.value = Number(roomState.target) || 0;
+        el.alertThreshold.value = Math.max(1, Number(roomState.alertThreshold) || 0);
+        el.alertThresholdUnit.dataset.unit = roomState.alertThresholdUnit || 'seg';
+        el.alertThresholdUnit.textContent = el.alertThresholdUnit.dataset.unit;
+
+        el.container.innerHTML = '';
+        (roomState.sections || []).forEach((section) => {
+          const sectionValue = section.value ?? section.minutes ?? 0;
+          el.container.appendChild(buildSectionRow(section.name || 'Sección', sectionValue, section.unit || 'min'));
+        });
+        ensureSectionExists();
+        renumberRows();
+      }
+
+      Object.assign(state, {
+        running: !!roomState.running,
+        completed: !!roomState.completed,
+        currentIndex: Number(roomState.currentIndex) || 0,
+        currentMs: Number(roomState.currentMs) || 0,
+        currentStart: Number(roomState.currentStart) || 0,
+        lastSectionIndex: -1
+      });
+
+      if (state.running) {
+        enterRunningMode();
+        el.startBtn.textContent = 'Pausar';
+      } else {
+        exitRunningMode();
+        if (state.completed) el.startBtn.textContent = 'Terminar';
+        else el.startBtn.textContent = 'Iniciar';
+      }
+      el.nextBtn.disabled = state.currentIndex >= parseSections().length - 1;
+      updateView();
+      syncActionAccess();
+    }
+
+    async function copyRoomLink() {
+      if (!collab.roomId) {
+        await createOrJoinHostRoom();
+      }
+      const url = updateRoomLink();
+      if (!url) return;
+      try {
+        await navigator.clipboard.writeText(url);
+        setTeamStatus('Link copiado');
+      } catch (_e) {
+        setTeamStatus('No se pudo copiar automáticamente');
+      }
+    }
+
+    async function createOrJoinHostRoom() {
+      if (collab.connected && collab.roomId) return collab.roomId;
+      if (collab.roomId) {
+        connectToRoom(collab.roomId);
+        return collab.roomId;
+      }
+      const created = await createRoom();
+      return created || '';
+    }
 
     function syncSeoForRuntime() {
       const canonicalBase = window.location.hostname.includes('demos.eiley.dev')
@@ -1263,6 +1840,7 @@
         <button type="button" class="remove">&times;</button>
       `;
       row.querySelector('.unit-btn').addEventListener('click', () => {
+        if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) return;
         const input = row.querySelector('.sectionMinutes');
         const v = Number(input.value) || 0;
         if (row.dataset.unit === 'min') {
@@ -1274,17 +1852,34 @@
         }
         row.querySelector('.unit-btn').textContent = row.dataset.unit;
         persist();
+        if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) return;
         resetTimer();
       });
       row.querySelector('.remove').addEventListener('click', () => {
+        if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) return;
         row.remove();
         ensureSectionExists();
         renumberRows();
-        resetTimer();
+        if (!collab.connected || collab.role === 'host' || collab.permissions.guestCanEdit) resetTimer();
         persist();
       });
-      row.querySelector('.sectionName').addEventListener('input', () => { persist(); updateView(); });
-      row.querySelector('.sectionMinutes').addEventListener('input', () => { persist(); resetTimer(); });
+      row.querySelector('.sectionName').addEventListener('input', () => {
+        if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) return;
+        persist();
+        if (collab.connected && collab.role === 'host' && canSendToServer()) {
+          sendAction('applyConfig', createRoomConfigPayload());
+        }
+        updateView();
+      });
+      row.querySelector('.sectionMinutes').addEventListener('input', () => {
+        if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) return;
+        persist();
+        if (collab.connected && collab.role === 'host' && canSendToServer()) {
+          sendAction('applyConfig', createRoomConfigPayload());
+        } else if (!collab.connected) {
+          resetTimer();
+        }
+      });
       return row;
     }
 
@@ -1476,6 +2071,7 @@
 
     /* ── Timer logic ── */
     function startTimer() {
+      if (collab.connected && sendAction('start')) return;
       if (state.completed) return;
       const sections = parseSections();
       if (sections.length === 0) return;
@@ -1495,6 +2091,7 @@
     }
 
     function pauseTimer() {
+      if (collab.connected && sendAction('pause')) return;
       if (!state.running) return;
       state.currentMs = Math.max(0, state.currentMs - (Date.now() - state.currentStart));
       state.running = false;
@@ -1506,6 +2103,7 @@
     }
 
     function resetTimer() {
+      if (collab.connected && sendAction('reset')) return;
       clearInterval(state.timer);
       Object.assign(state, {
         timer: null,
@@ -1525,6 +2123,7 @@
     }
 
     function nextSection() {
+      if (collab.connected && sendAction('next')) return;
       const sections = parseSections();
       if (state.currentIndex < sections.length - 1) {
         state.currentIndex += 1;
@@ -1631,26 +2230,76 @@
       updateView();
     }
 
+    const sendConfigIfHost = () => {
+      if (collab.connected && collab.role === 'host' && canSendToServer()) {
+        sendAction('applyConfig', createRoomConfigPayload());
+      }
+    };
+
     el.startBtn.addEventListener('click', () => { state.running ? pauseTimer() : startTimer(); });
     el.resetBtn.addEventListener('click', resetTimer);
     el.nextBtn.addEventListener('click', nextSection);
     el.addSection.addEventListener('click', () => {
+      if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) return;
       el.container.appendChild(buildSectionRow('Nueva sección', 5));
       renumberRows();
       persist();
-      resetTimer();
+      sendConfigIfHost();
+      if (!collab.connected || collab.role === 'host') resetTimer();
     });
     el.loadDefault.addEventListener('click', () => { applyDefault(); resetTimer(); });
-    el.targetInput.addEventListener('input', () => { updateView(); persist(); });
-    el.alertThreshold.addEventListener('input', () => { updateView(); persist(); });
+    el.targetInput.addEventListener('input', () => {
+      if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) return;
+      updateView();
+      persist();
+      sendConfigIfHost();
+    });
+    el.alertThreshold.addEventListener('input', () => {
+      if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) return;
+      updateView();
+      persist();
+      sendConfigIfHost();
+    });
     el.alertThresholdUnit.addEventListener('click', () => {
+      if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) return;
       const next = el.alertThresholdUnit.dataset.unit === 'seg' ? 'min' : 'seg';
       el.alertThresholdUnit.dataset.unit = next;
       el.alertThresholdUnit.textContent = next;
       updateView();
       persist();
+      sendConfigIfHost();
     });
-    el.sessionName.addEventListener('input', () => { persist(); updateView(); });
+    el.sessionName.addEventListener('input', () => {
+      if (collab.connected && collab.role !== 'host' && !collab.permissions.guestCanEdit) return;
+      persist();
+      updateView();
+      sendConfigIfHost();
+    });
+    el.memberNameInput?.addEventListener('input', () => {
+      updateRoomProfile(el.memberNameInput.value);
+      setTeamStatus(`Nombre guardado: ${collab.profile.name}`);
+    });
+    el.shareRoomBtn?.addEventListener('click', async () => {
+      if (el.shareRoomBtn.disabled) return;
+      const roomId = await createOrJoinHostRoom();
+      if (roomId) {
+        updateRoomLink();
+        copyRoomLink();
+      }
+    });
+    el.copyRoomBtn?.addEventListener('click', copyRoomLink);
+    el.leaveRoomBtn?.addEventListener('click', leaveRoom);
+    el.permPlayInput?.addEventListener('change', applyPermissionsUpdate);
+    el.permNextInput?.addEventListener('change', applyPermissionsUpdate);
+    el.permResetInput?.addEventListener('change', applyPermissionsUpdate);
+    el.permEditInput?.addEventListener('change', applyPermissionsUpdate);
+    el.teamButton?.addEventListener('click', () => {
+      el.teamPanel.classList.toggle('hidden');
+    });
+
+    if (el.teamPanel?.classList.contains('hidden') && queryRoomId) {
+      el.teamPanel.classList.remove('hidden');
+    }
 
     document.addEventListener('click', (e) => {
       const button = e.target.closest('button');
@@ -1668,7 +2317,16 @@
 
     loadStored();
     resetTimer();
+    syncActionAccess();
+    syncProfileToPanel();
     syncSeoForRuntime();
+
+    if (queryRoomId) {
+      collab.roomId = queryRoomId;
+      collab.hostToken = queryHostToken || loadHostTokenForRoom(queryRoomId);
+      connectToRoom(queryRoomId);
+      if (el.teamPanel?.classList.contains('hidden')) el.teamPanel.classList.remove('hidden');
+    }
   </script>
 </body>
 </html>
