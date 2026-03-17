@@ -1,0 +1,1588 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="Demo Timer es un cronómetro por secciones para presentaciones, demos y reuniones con control visual de avances en tiempo real."
+  />
+  <meta
+    name="keywords"
+    content="cronometro,temporizador,presentaciones,secciones,reloj de tiempo,timer,gestión de tiempo,sprint,speaker"
+  />
+  <meta name="application-name" content="Demo Timer" />
+  <meta name="apple-mobile-web-app-title" content="Demo Timer" />
+  <meta name="author" content="Erik Sánchez" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="color-scheme" content="only dark" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Demo Timer" />
+  <meta property="og:locale" content="es_AR" />
+  <meta property="og:title" content="Demo Timer | Cronómetro por secciones" />
+  <meta
+    property="og:description"
+    content="Gestioná tu tiempo por bloques con una vista de progreso clara y controles rápidos para iniciar, pausar y avanzar secciones."
+  />
+  <meta property="og:url" id="og-url" content="https://demos.eiley.dev" />
+  <meta property="og:image" content="https://github.com/Eiley2.png" />
+  <meta property="og:image:alt" content="Demo Timer en pantalla con barras de progreso por secciones." />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@Eiley2" />
+  <meta name="twitter:creator" content="@Eiley2" />
+  <meta name="twitter:title" content="Demo Timer | Cronómetro por secciones" />
+  <meta
+    name="twitter:description"
+    content="Cronómetro de presentación con secciones, barra de progreso y estado en vivo para controlar tus sesiones."
+  />
+  <meta name="twitter:image" content="https://github.com/Eiley2.png" />
+  <link rel="canonical" id="canonical-url" href="https://demos.eiley.dev" />
+  <link rel="alternate" id="alternate-url" href="https://demos.eiley.dev" hreflang="es" />
+
+  <script type="application/ld+json" id="ld-json-app">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Demo Timer",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "Web",
+      "description": "Cronómetro por secciones para presentaciones y sesiones con control de avance por bloques, temporizador total y progreso visual.",
+      "url": "https://demos.eiley.dev",
+      "author": {
+        "@type": "Person",
+        "name": "Erik Sánchez",
+        "url": "https://github.com/Eiley2"
+      }
+    }
+  </script>
+  <script type="application/ld+json" id="ld-json-site">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Demo Timer",
+      "url": "https://demos.eiley.dev",
+      "inLanguage": "es",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://demos.eiley.dev?query={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+  </script>
+  <title>Demo Timer | Cronómetro por secciones para presentaciones</title>
+  <style>
+    :root {
+      --timer-scale: 1;
+      --section-scale: 1;
+      --label-scale: 1;
+      --bar-height: 6;
+      --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+      --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --color-timer: #ffffff;
+      --color-section: #ffffff;
+      --color-bar: #ffffff;
+      --color-danger: #e84040;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @keyframes fadeRise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes configReveal {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes timerReveal {
+      from { opacity: 0; transform: scale(0.985); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes segmentIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes labelIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes sectionTransition {
+      from { opacity: 0; transform: translateY(8px) scale(0.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes numberSlide {
+      from { opacity: 0.45; transform: translateY(8px) scale(0.98); }
+      60% { opacity: 1; transform: translateY(-2px) scale(1.03); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes sectionRowIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Top bar ── */
+    .bar-area {
+      width: 100%;
+      padding: 24px 32px 0;
+      opacity: 0;
+      animation: fadeRise 0.62s var(--ease-out-expo) forwards;
+      animation-delay: 80ms;
+    }
+
+    .timeline {
+      display: flex;
+      width: 100%;
+      height: calc(var(--bar-height) * 1px);
+      gap: 8px;
+      transition: height 0.2s var(--ease-out-quart);
+      overflow: hidden;
+    }
+
+    .timeline-seg {
+      flex-grow: 1;
+      flex-basis: 0;
+      min-width: 0;
+      background: rgba(255,255,255,0.12);
+      position: relative;
+      overflow: hidden;
+      border-radius: 3px;
+      opacity: 0;
+      transform: translateY(6px);
+      animation: segmentIn 0.42s var(--ease-out-quart) forwards;
+      animation-delay: calc(var(--i, 0) * 55ms);
+    }
+
+    .timeline-seg.done { background: rgba(255,255,255,0.25); }
+
+    .timeline-seg .fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: color-mix(in srgb, var(--color-bar) 60%, transparent);
+      transition: width 0.18s linear;
+      transform-origin: left;
+    }
+
+    .timeline-labels {
+      display: flex;
+      width: 100%;
+      gap: 8px;
+      margin-top: 6px;
+      perspective: 600px;
+    }
+
+    .timeline-labels span {
+      flex-grow: 1;
+      flex-basis: 0;
+      min-width: 0;
+      font-size: calc(0.7rem * var(--label-scale));
+      opacity: 0.3;
+      text-align: center;
+      letter-spacing: 0.02em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition: opacity 0.22s var(--ease-out-quart), font-size 0.22s var(--ease-out-quart);
+      transform: translateY(4px);
+      opacity: 0;
+      animation: labelIn 0.34s var(--ease-out-quart) forwards;
+      animation-delay: calc(120ms + (var(--i, 0) * 45ms));
+    }
+
+    .timeline-labels span.near { opacity: 0.45; }
+    .timeline-labels span.active { opacity: 0.7; }
+
+    /* ── Center: timer ── */
+    .timer-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      min-height: 0;
+      opacity: 0;
+      animation: fadeRise 0.68s var(--ease-out-quart) forwards;
+      animation-delay: 160ms;
+    }
+
+    .session-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.25;
+      margin-bottom: 8px;
+      animation: timerReveal 0.52s var(--ease-out-expo) both;
+      animation-delay: 230ms;
+    }
+
+    #totalTimer {
+      font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: calc(clamp(4rem, 15vw, 12rem) * var(--timer-scale));
+      font-weight: 200;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-timer);
+      transition: color 0.36s var(--ease-out-quart), font-size 0.2s var(--ease-out-quart);
+      transform: translateZ(0);
+      animation: timerReveal 0.7s var(--ease-out-expo) both;
+      animation-delay: 280ms;
+    }
+
+    .section-context {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      min-height: 48px;
+      opacity: 0;
+      animation: fadeRise 0.5s var(--ease-out-quart) both;
+      animation-delay: 360ms;
+    }
+
+    .section-now {
+      font-size: calc(1.25rem * var(--section-scale));
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: var(--color-section);
+      transition: font-size 0.2s var(--ease-out-quart);
+    }
+
+    .section-now .time {
+      font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-weight: 400;
+      opacity: 0.5;
+      margin-left: 6px;
+      font-size: calc(1.05rem * var(--section-scale));
+    }
+
+    .section-position {
+      font-size: calc(0.8rem * var(--section-scale));
+      opacity: 0.3;
+      letter-spacing: 0.04em;
+      transition: font-size 0.2s var(--ease-out-quart);
+    }
+
+    .done-label {
+      font-size: 0.85rem;
+      opacity: 0.3;
+      margin-top: 10px;
+      min-height: 1.2em;
+    }
+
+    .section-transition {
+      animation: sectionTransition 0.38s var(--ease-out-quart) both;
+    }
+
+    .number-transition {
+      animation: numberSlide 0.35s var(--ease-out-quart) both;
+    }
+
+    /* ── Danger ── */
+    .danger #totalTimer { color: var(--color-danger); }
+    .danger .timeline-seg .fill { background: color-mix(in srgb, var(--color-danger) 65%, transparent); }
+    .danger .timeline-seg.done { background: color-mix(in srgb, var(--color-danger) 30%, transparent); }
+
+    .is-running .section-context,
+    .is-running .section-now {
+      color: rgba(255,255,255,0.85);
+      transition: color 0.2s var(--ease-out-quart);
+    }
+
+    .is-running .timeline-seg .fill { transition: width 0.18s linear, transform 0.18s var(--ease-out-quart); }
+
+    /* ── Controls ── */
+    .actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 24px;
+      opacity: 0;
+      animation: fadeRise 0.5s var(--ease-out-quart) both;
+      animation-delay: 430ms;
+    }
+
+    .actions button {
+      position: relative;
+      overflow: hidden;
+      font: inherit;
+      font-size: 0.8rem;
+      letter-spacing: 0.04em;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.4);
+      border-radius: 5px;
+      padding: 8px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s var(--ease-out-quart), color 0.2s var(--ease-out-quart), transform 90ms var(--ease-out-quart);
+      transform: translateZ(0);
+    }
+
+    .actions button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.2);
+      opacity: 0;
+      transform: scaleX(0.03) scaleY(0.35);
+      pointer-events: none;
+      transition: transform 340ms var(--ease-out-quart), opacity 340ms var(--ease-out-quart);
+    }
+
+    .actions button.is-pressed {
+      transform: scale(0.97);
+    }
+
+    .actions button:hover {
+      border-color: rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.7);
+    }
+
+    .actions button.is-pressed::after {
+      transform: scaleX(1) scaleY(1);
+      opacity: 0.16;
+    }
+
+    .actions button.pulse,
+    .actions button.is-running {
+      border-color: rgba(255,255,255,0.4);
+    }
+
+    .actions button:disabled { opacity: 0.15; pointer-events: none; }
+
+    .actions button.primary {
+      border-color: rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.85);
+    }
+
+    /* ── Bottom config (3 columns) ── */
+    .config {
+      --config-max-height: 420px;
+      width: 100%;
+      max-width: 1100px;
+      height: 42vh;
+      min-height: 280px;
+      max-height: var(--config-max-height);
+      flex-shrink: 0;
+      align-self: center;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 1fr;
+      gap: 40px;
+      padding: 0 32px 24px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding-top: 24px;
+      opacity: 0;
+      animation: configReveal 0.5s var(--ease-out-quart) forwards;
+      animation-delay: 500ms;
+      overflow: hidden;
+      transition: opacity 220ms var(--ease-out-quart), transform 220ms var(--ease-out-quart), max-height 220ms var(--ease-out-quart), padding 220ms var(--ease-out-quart), border-color 220ms var(--ease-out-quart);
+    }
+
+    .config.hidden {
+      pointer-events: none;
+      opacity: 0;
+      max-height: 0;
+      min-height: 0;
+      transform: translateY(14px);
+      padding-top: 0;
+      padding-bottom: 0;
+      margin: 0;
+      border-top-color: transparent;
+    }
+
+    @media (max-width: 860px) {
+      .config {
+        grid-template-columns: 1fr;
+        max-width: 420px;
+        height: auto;
+        --config-max-height: 50vh;
+        gap: 28px;
+        overflow-y: auto;
+      }
+    }
+
+    .config-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      min-height: 0;
+      opacity: 0;
+      animation: fadeRise 0.38s var(--ease-out-quart) forwards;
+    }
+
+    .config-col:nth-child(1) { animation-delay: 560ms; }
+    .config-col:nth-child(2) { animation-delay: 610ms; }
+    .config-col:nth-child(3) { animation-delay: 660ms; }
+
+    /* Scrollbar styling */
+    .config-col::-webkit-scrollbar,
+    .segments-scroll::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .config-col::-webkit-scrollbar-track,
+    .segments-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .config-col::-webkit-scrollbar-thumb,
+    .segments-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+    }
+
+    .config-col::-webkit-scrollbar-thumb:hover,
+    .segments-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Firefox */
+    .config-col,
+    .segments-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.1) transparent;
+    }
+
+    .col-title {
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      opacity: 0.55;
+    }
+
+    /* ── Form fields ── */
+    .setup-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+
+    .field label {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.55;
+    }
+
+    input {
+      font: inherit;
+      font-size: 0.85rem;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.9);
+      padding: 7px 0;
+      outline: none;
+      transition: border-color 0.2s var(--ease-out-quart), box-shadow 0.2s var(--ease-out-quart);
+      border-radius: 0;
+    }
+
+    input:focus {
+      border-color: rgba(255,255,255,0.4);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-timer) 18%, transparent);
+    }
+    input::placeholder { color: rgba(255,255,255,0.25); }
+
+    input[type="number"] { -moz-appearance: textfield; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; display: none; }
+
+    /* ── Section list ── */
+    .section-list-header {
+      display: grid;
+      grid-template-columns: 20px 1fr 44px 28px 24px;
+      gap: 6px;
+      padding-bottom: 4px;
+    }
+
+    .section-list-header span {
+      font-size: 0.5rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.5;
+    }
+
+    .section-list-header span:nth-child(3) { text-align: right; }
+
+    .section-row {
+      display: grid;
+      grid-template-columns: 20px 1fr 44px 28px 24px;
+      gap: 6px;
+      align-items: center;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      animation: sectionRowIn 0.28s var(--ease-out-quart) both;
+    }
+
+    .section-row:last-child { border-bottom: none; }
+
+    .section-num {
+      font-size: 0.6rem;
+      opacity: 0.45;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .section-row input {
+      border-bottom-color: rgba(255,255,255,0.05);
+      padding: 4px 0;
+      font-size: 0.78rem;
+    }
+
+    .section-row input:focus { border-bottom-color: rgba(255,255,255,0.3); }
+
+    .section-row input[type="number"] {
+      text-align: right;
+      font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.78rem;
+      -moz-appearance: textfield;
+    }
+
+    .section-row input[type="number"]::-webkit-inner-spin-button { display: none; }
+
+    .section-row .unit-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.4);
+      font-size: 0.55rem;
+      font-family: inherit;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      padding: 2px 0;
+      text-align: center;
+      text-transform: lowercase;
+      line-height: 1;
+      position: relative;
+      overflow: hidden;
+      transform: translateZ(0);
+      transition: transform 90ms var(--ease-out-quart), color 0.2s var(--ease-out-quart);
+    }
+
+    .section-row .unit-btn:hover { color: rgba(255,255,255,0.65); }
+
+    .section-row .remove {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.3);
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 2px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transform: translateZ(0);
+      transition: color 0.2s, transform 90ms var(--ease-out-quart);
+      line-height: 1;
+    }
+
+    .section-row .unit-btn::after,
+    .section-row .remove::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(255,255,255,0.15);
+      opacity: 0;
+      transform: scaleX(0.02) scaleY(0.28);
+      pointer-events: none;
+      transition: transform 320ms var(--ease-out-quart), opacity 320ms var(--ease-out-quart);
+    }
+
+    .section-row .unit-btn.is-pressed::after,
+    .section-row .remove.is-pressed::after {
+      transform: scaleX(1) scaleY(1);
+      opacity: 0.16;
+    }
+
+    .section-row .unit-btn.is-pressed,
+    .section-row .remove.is-pressed,
+    .section-row .unit-btn:active,
+    .section-row .remove:active {
+      transform: scale(0.98);
+    }
+
+    .section-row .remove:hover { color: rgba(255,255,255,0.6); }
+
+    .segments-scroll {
+      overflow-y: scroll;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .list-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+
+    .list-footer-actions {
+      display: flex;
+      gap: 2px;
+    }
+
+    .list-footer-actions button {
+      font: inherit;
+      font-size: 0.65rem;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.5);
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+      transition: color 0.2s var(--ease-out-quart), transform 90ms var(--ease-out-quart);
+      transform: translateZ(0);
+    }
+
+    .list-footer-actions button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.14);
+      opacity: 0;
+      transform: scaleX(0.02) scaleY(0.3);
+      pointer-events: none;
+      transition: transform 320ms var(--ease-out-quart), opacity 320ms var(--ease-out-quart);
+    }
+
+    .list-footer-actions button.is-pressed::after {
+      transform: scaleX(1) scaleY(1);
+      opacity: 0.16;
+    }
+
+    .list-footer-actions button.is-pressed {
+      transform: scale(0.98);
+    }
+
+    .list-footer-actions button:hover { color: rgba(255,255,255,0.75); }
+
+    .total-summary {
+      font-size: 0.65rem;
+      font-variant-numeric: tabular-nums;
+      opacity: 0.6;
+    }
+
+    .total-summary .match { color: rgba(255,255,255,0.75); }
+    .total-summary .over { color: var(--color-danger); opacity: 1; }
+
+    /* ── Size & color config ── */
+    .size-row, .color-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .size-row label, .color-row label {
+      font-size: 0.65rem;
+      opacity: 0.55;
+      white-space: nowrap;
+      min-width: 70px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      border-bottom: none;
+      outline: none;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      border: none;
+      cursor: pointer;
+    }
+
+    input[type="color"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 50%;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+    input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+    input[type="color"]::-moz-color-swatch { border: none; border-radius: 50%; }
+
+    /* ── Collapsible ── */
+    .collapsible-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+
+    .collapsible-toggle .chevron {
+      font-size: 0.5rem;
+      opacity: 0.4;
+      transition: transform 220ms var(--ease-out-quart);
+    }
+
+    .collapsible-toggle.open .chevron { transform: rotate(90deg); }
+
+    .collapsible-body {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .collapsible-body.open { display: flex; }
+
+    /* ── Sub-section ── */
+    .sub-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sub-title {
+      font-size: 0.55rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.45;
+      margin-top: 4px;
+    }
+
+    /* ── Guide ── */
+    .guide p {
+      font-size: 0.68rem;
+      line-height: 1.65;
+      opacity: 0.5;
+    }
+
+    .guide kbd {
+      display: inline-block;
+      font-family: inherit;
+      font-size: 0.6rem;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 3px;
+      padding: 1px 5px;
+      opacity: 0.7;
+      vertical-align: 1px;
+    }
+
+    /* ── Edit toggle (while running) ── */
+    .edit-toggle {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.1);
+      font: inherit;
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 4px 10px;
+      transition: color 0.2s var(--ease-out-quart);
+    }
+
+    .edit-toggle:hover { color: rgba(255,255,255,0.3); }
+    .edit-toggle.hidden { display: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1 class="visually-hidden">Demo Timer, cronómetro por secciones para presentaciones y sesiones en vivo</h1>
+
+  <!-- Top: progress bar -->
+  <header class="bar-area" role="banner" aria-label="Indicador de progreso por secciones">
+    <div class="timeline" id="timeline"></div>
+    <div class="timeline-labels" id="timelineLabels"></div>
+  </header>
+
+  <!-- Center: timer -->
+  <main class="timer-area" id="displayPanel" role="main" aria-live="polite">
+    <div class="session-name" id="sessionTitle">Demo</div>
+    <div id="totalTimer">30:00</div>
+
+    <div class="section-context">
+      <div class="section-now" id="sectionNow"></div>
+      <div class="section-position" id="sectionPosition"></div>
+    </div>
+
+    <div class="done-label" id="doneText"></div>
+
+    <div class="actions">
+      <button id="startBtn" class="primary">Iniciar</button>
+      <button id="nextBtn" disabled>Siguiente</button>
+      <button id="resetBtn">Reiniciar</button>
+    </div>
+  </main>
+
+  <!-- Bottom: config in 3 columns -->
+  <section class="config" id="configPanel" aria-label="Configuración de sesión, secciones y apariencia">
+    <!-- Col 1: Session -->
+    <div class="config-col">
+      <div class="col-title">Sesión</div>
+      <div class="setup-fields">
+        <div class="field">
+          <label for="sessionName">Nombre</label>
+          <input id="sessionName" type="text" value="Demo" placeholder="Ej: Sprint Review" />
+        </div>
+        <div class="field">
+          <label for="targetMinutes">Objetivo (min)</label>
+          <input id="targetMinutes" type="number" min="1" value="30" placeholder="30" />
+        </div>
+      </div>
+
+      <footer class="guide" style="margin-top: auto;">
+        <h2 class="visually-hidden">Información y autor</h2>
+        <div class="sub-title">Cómo funciona</div>
+        <p>
+          Configurá las secciones y presioná <kbd>Iniciar</kbd>.
+          La barra superior muestra el avance por sección.
+          <kbd>Espacio</kbd> pausa, <kbd>N</kbd> siguiente, <kbd>R</kbd> reinicia.
+          Si superás el objetivo, el timer se pone rojo.
+        </p>
+        <p style="margin-top: 10px;">
+          Hecho por <a href="https://github.com/Eiley2" target="_blank" rel="noopener" style="color: rgba(255,255,255,0.5); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.15);"><svg style="width:12px;height:12px;vertical-align:-1px;margin-right:3px;fill:currentColor;" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>@Eiley2</a>
+        </p>
+      </footer>
+    </div>
+
+    <!-- Col 2: Sections -->
+    <div class="config-col">
+      <div class="col-title">Secciones</div>
+      <div class="section-list-header">
+        <span></span>
+        <span>Nombre</span>
+        <span>Tiempo</span>
+        <span></span>
+        <span></span>
+      </div>
+      <div class="segments-scroll" id="segments"></div>
+      <div class="list-footer">
+        <div class="list-footer-actions">
+          <button id="addSection">+ Agregar</button>
+          <button id="loadDefault">Ejemplo 30m</button>
+        </div>
+        <div class="total-summary" id="totalSummary"></div>
+      </div>
+    </div>
+
+    <!-- Col 3: Appearance -->
+    <div class="config-col">
+      <div class="col-title">Apariencia</div>
+
+      <div class="sub-section">
+        <div class="sub-title">Tamaño</div>
+        <div class="size-row">
+          <label>Cronómetro</label>
+          <input type="range" id="timerScale" min="0.6" max="1.4" step="0.05" value="1" />
+        </div>
+        <div class="size-row">
+          <label>Sección</label>
+          <input type="range" id="sectionScale" min="0.7" max="1.8" step="0.05" value="1" />
+        </div>
+        <div class="size-row">
+          <label>Labels</label>
+          <input type="range" id="labelScale" min="0.6" max="2" step="0.05" value="1" />
+        </div>
+        <div class="size-row">
+          <label>Barra</label>
+          <input type="range" id="barHeight" min="3" max="14" step="1" value="6" />
+        </div>
+      </div>
+
+      <div class="sub-section">
+        <div class="collapsible-toggle" data-target="colorsBody">
+          <div class="sub-title" style="margin-top:0;">Colores</div>
+          <span class="chevron">&#9654;</span>
+        </div>
+        <div class="collapsible-body" id="colorsBody">
+          <div class="color-row">
+            <label>Cronómetro</label>
+            <input type="color" id="colorTimer" value="#ffffff" />
+          </div>
+          <div class="color-row">
+            <label>Sección</label>
+            <input type="color" id="colorSection" value="#ffffff" />
+          </div>
+          <div class="color-row">
+            <label>Barra</label>
+            <input type="color" id="colorBar" value="#ffffff" />
+          </div>
+          <div class="color-row">
+            <label>Alerta</label>
+            <input type="color" id="colorDanger" value="#e84040" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <button class="edit-toggle hidden" id="editToggle">Editar</button>
+
+  <script>
+    const el = {
+      container: document.getElementById('segments'),
+      targetInput: document.getElementById('targetMinutes'),
+      canonicalUrl: document.getElementById('canonical-url'),
+      alternateUrl: document.getElementById('alternate-url'),
+      ogUrl: document.getElementById('og-url'),
+      ldJsonApp: document.getElementById('ld-json-app'),
+      ldJsonSite: document.getElementById('ld-json-site'),
+      sessionName: document.getElementById('sessionName'),
+      startBtn: document.getElementById('startBtn'),
+      nextBtn: document.getElementById('nextBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      addSection: document.getElementById('addSection'),
+      loadDefault: document.getElementById('loadDefault'),
+      totalTimer: document.getElementById('totalTimer'),
+      sessionTitle: document.getElementById('sessionTitle'),
+      sectionNow: document.getElementById('sectionNow'),
+      sectionPosition: document.getElementById('sectionPosition'),
+      timeline: document.getElementById('timeline'),
+      timelineLabels: document.getElementById('timelineLabels'),
+      displayPanel: document.getElementById('displayPanel'),
+      doneText: document.getElementById('doneText'),
+      configPanel: document.getElementById('configPanel'),
+      editToggle: document.getElementById('editToggle'),
+      totalSummary: document.getElementById('totalSummary'),
+      timerScale: document.getElementById('timerScale'),
+      sectionScale: document.getElementById('sectionScale'),
+      labelScale: document.getElementById('labelScale'),
+      barHeight: document.getElementById('barHeight'),
+      colorTimer: document.getElementById('colorTimer'),
+      colorSection: document.getElementById('colorSection'),
+      colorBar: document.getElementById('colorBar'),
+      colorDanger: document.getElementById('colorDanger')
+    };
+
+    const state = {
+      running: false,
+      currentIndex: 0,
+      currentMs: 0,
+      currentStart: 0,
+      timer: null,
+      completed: false,
+      lastSectionIndex: -1
+    };
+
+    function syncSeoForRuntime() {
+      const canonicalBase = window.location.hostname.includes('demos.eiley.dev')
+        ? window.location.origin
+        : 'https://demos.eiley.dev';
+      const normalizedPathname = window.location.pathname || '/';
+      const canonical = `${canonicalBase}${normalizedPathname}`;
+      if (el.canonicalUrl) el.canonicalUrl.href = canonical;
+      if (el.alternateUrl) el.alternateUrl.href = canonical;
+      if (el.ogUrl) el.ogUrl.setAttribute('content', canonical);
+
+      const applyUrlToJsonLd = (scriptEl, fallbackKey) => {
+        if (!scriptEl) return;
+        try {
+          const payload = JSON.parse(scriptEl.textContent);
+          if (fallbackKey === 'site' && payload.potentialAction?.target && typeof payload.potentialAction.target === 'string') {
+            payload.potentialAction.target = `${canonical}?query={search_term_string}`;
+          }
+          payload.url = canonical;
+          scriptEl.textContent = JSON.stringify(payload);
+        } catch (_e) {
+          return;
+        }
+      };
+
+      applyUrlToJsonLd(el.ldJsonApp, 'app');
+      applyUrlToJsonLd(el.ldJsonSite, 'site');
+    }
+
+    const toMs = (min) => Math.max(0, Number(min) || 0) * 60000;
+
+    const fmt = (ms) => {
+      const s = Math.max(0, Math.floor(ms / 1000));
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      const h = Math.floor(m / 60);
+      const mm = m % 60;
+      if (h > 0) return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+      return `${String(mm).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    };
+
+    function pulsePress(button) {
+      if (!button) return;
+      button.classList.remove('is-pressed');
+      void button.offsetWidth;
+      button.classList.add('is-pressed');
+      clearTimeout(button._pressTimer);
+      button._pressTimer = setTimeout(() => button.classList.remove('is-pressed'), 150);
+    }
+
+    function animateNumber(node, fromMs, toMs, formatValue = fmt, duration = 360) {
+      if (!node) return;
+      const from = Number(fromMs);
+      const to = Number(toMs);
+      if (!Number.isFinite(from) || !Number.isFinite(to)) {
+        node.textContent = formatValue(to);
+        return;
+      }
+      if (from === to) {
+        node.textContent = formatValue(to);
+        return;
+      }
+      if (node._numberRaf) cancelAnimationFrame(node._numberRaf);
+      const started = performance.now();
+      const delta = to - from;
+
+      node.classList.remove('number-transition');
+      void node.offsetWidth;
+      node.classList.add('number-transition');
+
+      const tick = (now) => {
+        const progress = Math.min(1, (now - started) / duration);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const value = from + delta * eased;
+        node.textContent = formatValue(Math.max(0, Math.round(value)));
+        if (progress < 1) {
+          node._numberRaf = requestAnimationFrame(tick);
+          return;
+        }
+        node.textContent = formatValue(Math.max(0, Math.round(to)));
+        node._numberRaf = null;
+      };
+
+      node._numberRaf = requestAnimationFrame(tick);
+    }
+
+    function animateSectionSwap() {
+      [el.sectionNow, el.sectionPosition, el.totalTimer].forEach((node) => {
+        node.classList.remove('section-transition');
+        void node.offsetWidth;
+        node.classList.add('section-transition');
+      });
+    }
+
+    function updateRunningClass() {
+      el.displayPanel.classList.toggle('is-running', !!state.running);
+      el.startBtn.classList.toggle('is-running', !!state.running);
+    }
+
+    /* ── Layout modes ── */
+    function enterRunningMode() {
+      el.configPanel.classList.add('hidden');
+      el.editToggle.classList.remove('hidden');
+      updateRunningClass();
+    }
+
+    function exitRunningMode() {
+      el.configPanel.classList.remove('hidden');
+      el.editToggle.classList.add('hidden');
+      updateRunningClass();
+    }
+
+    el.editToggle.addEventListener('click', exitRunningMode);
+
+
+    /* ── Collapsibles ── */
+    document.querySelectorAll('.collapsible-toggle').forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const body = document.getElementById(toggle.dataset.target);
+        toggle.classList.toggle('open');
+        body.classList.toggle('open');
+      });
+    });
+
+    /* ── Appearance ── */
+    function applyCSSVars() {
+      const r = document.documentElement.style;
+      r.setProperty('--timer-scale', el.timerScale.value);
+      r.setProperty('--section-scale', el.sectionScale.value);
+      r.setProperty('--label-scale', el.labelScale.value);
+      r.setProperty('--bar-height', el.barHeight.value);
+      r.setProperty('--color-timer', el.colorTimer.value);
+      r.setProperty('--color-section', el.colorSection.value);
+      r.setProperty('--color-bar', el.colorBar.value);
+      r.setProperty('--color-danger', el.colorDanger.value);
+    }
+
+    [el.timerScale, el.sectionScale, el.labelScale, el.barHeight,
+     el.colorTimer, el.colorSection, el.colorBar, el.colorDanger
+    ].forEach(input => input.addEventListener('input', () => { applyCSSVars(); persist(); }));
+
+    /* ── Row numbering ── */
+    function renumberRows() {
+      el.container.querySelectorAll('.section-row').forEach((row, i) => {
+        row.querySelector('.section-num').textContent = i + 1;
+      });
+    }
+
+    /* ── Sections ── */
+    function buildSectionRow(name = 'Sección', val = 5, rowUnit = 'min') {
+      const row = document.createElement('div');
+      row.className = 'section-row';
+      row.dataset.unit = rowUnit;
+      row.innerHTML = `
+        <span class="section-num"></span>
+        <input type="text" class="sectionName" value="${name}" placeholder="Nombre">
+        <input type="number" class="sectionMinutes" min="0" value="${val}" placeholder="0">
+        <button type="button" class="unit-btn">${rowUnit}</button>
+        <button type="button" class="remove">&times;</button>
+      `;
+      row.querySelector('.unit-btn').addEventListener('click', () => {
+        const input = row.querySelector('.sectionMinutes');
+        const v = Number(input.value) || 0;
+        if (row.dataset.unit === 'min') {
+          row.dataset.unit = 'seg';
+          input.value = Math.round(v * 60);
+        } else {
+          row.dataset.unit = 'min';
+          input.value = Math.round(v / 60 * 10) / 10;
+        }
+        row.querySelector('.unit-btn').textContent = row.dataset.unit;
+        persist();
+        resetTimer();
+      });
+      row.querySelector('.remove').addEventListener('click', () => {
+        row.remove();
+        ensureSectionExists();
+        renumberRows();
+        resetTimer();
+        persist();
+      });
+      row.querySelector('.sectionName').addEventListener('input', () => { persist(); updateView(); });
+      row.querySelector('.sectionMinutes').addEventListener('input', () => { persist(); resetTimer(); });
+      return row;
+    }
+
+    function parseSections() {
+      return [...el.container.querySelectorAll('.section-row')].map((row) => ({
+        name: row.querySelector('.sectionName').value.trim() || 'Sin nombre',
+        value: Math.max(0, Number(row.querySelector('.sectionMinutes').value) || 0),
+        unit: row.dataset.unit || 'min'
+      }));
+    }
+
+    function sectionToMs(s) {
+      return s.unit === 'seg' ? s.value * 1000 : s.value * 60000;
+    }
+
+    function totalMs() {
+      return parseSections().reduce((a, s) => a + sectionToMs(s), 0);
+    }
+
+    function getSectionMs(index) {
+      const s = parseSections();
+      return index >= 0 && index < s.length ? sectionToMs(s[index]) : 0;
+    }
+
+    function ensureSectionExists() {
+      if (!el.container.querySelector('.section-row')) {
+        el.container.appendChild(buildSectionRow('Sección', 5));
+        renumberRows();
+      }
+    }
+
+    function remainingAfterCurrent(index) {
+      const sections = parseSections();
+      let ms = 0;
+      for (let i = index + 1; i < sections.length; i++) ms += sectionToMs(sections[i]);
+      return ms;
+    }
+
+    /* ── Timeline ── */
+    function buildTimeline(sections) {
+      const currentSegs = Array.from(el.timeline.children);
+      const currentLabels = Array.from(el.timelineLabels.children);
+      const needed = sections.length;
+
+      if (currentSegs.length > needed) {
+        currentSegs.slice(needed).forEach((seg) => seg.remove());
+      }
+      if (currentLabels.length > needed) {
+        currentLabels.slice(needed).forEach((label) => label.remove());
+      }
+
+      sections.forEach((s, i) => {
+        let seg = el.timeline.children[i];
+        if (!seg) {
+          seg = document.createElement('div');
+          seg.className = 'timeline-seg';
+          seg.innerHTML = '<div class="fill"></div>';
+          el.timeline.appendChild(seg);
+        }
+
+        let label = el.timelineLabels.children[i];
+        if (!label) {
+          label = document.createElement('span');
+          label.dataset.index = i;
+          el.timelineLabels.appendChild(label);
+        }
+
+        const weight = sectionToMs(s) || 500;
+        seg.style.flexGrow = weight;
+        seg.style.setProperty('--i', i);
+
+        label.textContent = s.name;
+        label.dataset.name = s.name;
+        label.dataset.index = i;
+        label.style.flexGrow = weight;
+        label.style.setProperty('--i', i);
+      });
+    }
+
+    function updateTimeline(sections, currentIndex, segmentProgress) {
+      buildTimeline(sections);
+      el.timeline.querySelectorAll('.timeline-seg').forEach((seg, i) => {
+        const fill = seg.querySelector('.fill');
+        seg.classList.toggle('done', i < currentIndex);
+        if (i < currentIndex) fill.style.width = '100%';
+        else if (i === currentIndex) fill.style.width = `${Math.max(0, Math.min(100, segmentProgress))}%`;
+        else fill.style.width = '0%';
+      });
+      const labels = el.timelineLabels.querySelectorAll('span');
+      const count = labels.length;
+      const compact = count > 5;
+      labels.forEach((label, i) => {
+        const name = sections[i]?.name || '';
+        const isActive = i === currentIndex;
+        const isNear = Math.abs(i - currentIndex) <= 1;
+        label.classList.toggle('active', isActive);
+        label.classList.toggle('near', !isActive && isNear);
+        if (compact) {
+          label.textContent = isNear ? label.dataset.name : (i + 1);
+        } else {
+          label.textContent = name;
+        }
+      });
+    }
+
+    /* ── Total summary ── */
+    function updateSummary() {
+      const totalMsVal = totalMs();
+      const totalMin = Math.round(totalMsVal / 60000 * 10) / 10;
+      const target = Number(el.targetInput.value) || 0;
+      const diff = Math.round((totalMin - target) * 10) / 10;
+      if (target <= 0) { el.totalSummary.innerHTML = `${totalMin} min`; return; }
+      if (diff === 0) el.totalSummary.innerHTML = `<span class="match">${totalMin} min — coincide</span>`;
+      else if (diff > 0) el.totalSummary.innerHTML = `<span class="over">${totalMin} min (+${diff})</span>`;
+      else el.totalSummary.innerHTML = `${totalMin} min (${diff})`;
+    }
+
+    /* ── View ── */
+    function updateView() {
+      const sections = parseSections();
+      const target = Number(el.targetInput.value) || 0;
+      const nowRemainingCurrent = state.running
+        ? Math.max(0, state.currentMs - (Date.now() - state.currentStart))
+        : state.currentMs;
+      const remainingFuture = remainingAfterCurrent(state.currentIndex);
+      const totalRemaining = nowRemainingCurrent + remainingFuture;
+      const previousTotal = Number(el.totalTimer.dataset.valueMs);
+      const shouldAnimateNumbers = state.currentIndex === state.lastSectionIndex ? false : true;
+
+      el.sessionTitle.textContent = el.sessionName.value || 'Demo';
+      if (shouldAnimateNumbers && Number.isFinite(previousTotal) && previousTotal !== totalRemaining) {
+        animateNumber(el.totalTimer, previousTotal, totalRemaining);
+      } else {
+        el.totalTimer.textContent = fmt(totalRemaining);
+      }
+      el.totalTimer.dataset.valueMs = String(totalRemaining);
+      updateSummary();
+
+      if (state.completed || sections.length === 0 || state.currentIndex >= sections.length) {
+        el.sectionNow.textContent = '';
+        el.sectionPosition.textContent = '';
+        el.doneText.textContent = state.completed ? 'Sesión finalizada' : '';
+        el.displayPanel.classList.remove('danger');
+        state.lastSectionIndex = -1;
+        el.totalTimer.dataset.valueMs = '0';
+        updateTimeline(sections, sections.length, 0);
+        updateRunningClass();
+        return;
+      }
+
+      const current = sections[state.currentIndex];
+      const next = sections[state.currentIndex + 1];
+      const isSectionChange = state.currentIndex !== state.lastSectionIndex;
+      const previousSectionMs = Number(el.sectionNow.querySelector('.time')?.dataset.valueMs);
+      const sectionTimeText = fmt(nowRemainingCurrent);
+      state.lastSectionIndex = state.currentIndex;
+
+      el.sectionNow.textContent = current.name;
+      const timeNode = document.createElement('span');
+      timeNode.className = 'time';
+      if (isSectionChange && Number.isFinite(previousSectionMs) && previousSectionMs !== nowRemainingCurrent) {
+        animateNumber(timeNode, previousSectionMs, nowRemainingCurrent, fmt, 300);
+      } else {
+        timeNode.textContent = sectionTimeText;
+      }
+      timeNode.dataset.valueMs = String(nowRemainingCurrent);
+      el.sectionNow.appendChild(timeNode);
+
+      el.sectionPosition.textContent =
+        `${state.currentIndex + 1} de ${sections.length}` +
+        (next ? ` — siguiente: ${next.name}` : ' — última sección');
+
+      const sectionTotal = getSectionMs(state.currentIndex) || 1;
+      const usedPct = (1 - nowRemainingCurrent / sectionTotal) * 100;
+      updateTimeline(sections, state.currentIndex, usedPct);
+
+      const targetMs = target * 60000;
+      el.displayPanel.classList.toggle('danger', targetMs > 0 && totalRemaining > targetMs);
+      if (isSectionChange) animateSectionSwap();
+      el.doneText.textContent = '';
+      updateRunningClass();
+    }
+
+    /* ── Timer logic ── */
+    function startTimer() {
+      if (state.completed) return;
+      const sections = parseSections();
+      if (sections.length === 0) return;
+      if (state.currentIndex >= sections.length) { resetTimer(); return; }
+      if (state.currentMs <= 0) state.currentMs = getSectionMs(state.currentIndex);
+      if (state.currentMs <= 0 && sections.length) state.currentMs = sectionToMs(sections[0]);
+      state.running = true;
+      state.currentStart = Date.now();
+      el.startBtn.textContent = 'Pausar';
+      el.nextBtn.disabled = false;
+      enterRunningMode();
+      buildTimeline(sections);
+      clearInterval(state.timer);
+      state.timer = setInterval(tick, 150);
+      updateRunningClass();
+      updateView();
+    }
+
+    function pauseTimer() {
+      if (!state.running) return;
+      state.currentMs = Math.max(0, state.currentMs - (Date.now() - state.currentStart));
+      state.running = false;
+      clearInterval(state.timer);
+      state.timer = null;
+      el.startBtn.textContent = 'Reanudar';
+      updateRunningClass();
+      updateView();
+    }
+
+    function resetTimer() {
+      clearInterval(state.timer);
+      Object.assign(state, {
+        timer: null,
+        running: false,
+        completed: false,
+        currentIndex: 0,
+        currentMs: getSectionMs(0),
+        currentStart: 0,
+        lastSectionIndex: -1
+      });
+      el.startBtn.textContent = 'Iniciar';
+      el.nextBtn.disabled = parseSections().length < 2;
+      exitRunningMode();
+      buildTimeline(parseSections());
+      updateRunningClass();
+      updateView();
+    }
+
+    function nextSection() {
+      const sections = parseSections();
+      if (state.currentIndex < sections.length - 1) {
+        state.currentIndex += 1;
+        state.currentMs = getSectionMs(state.currentIndex);
+        state.currentStart = state.running ? Date.now() : 0;
+        updateView();
+      } else {
+        finishSession();
+      }
+    }
+
+    function finishSession() {
+      clearInterval(state.timer);
+      state.timer = null;
+      state.running = false;
+      state.completed = true;
+      state.currentIndex = parseSections().length;
+      state.currentMs = 0;
+      state.lastSectionIndex = -1;
+      el.nextBtn.disabled = true;
+      el.startBtn.textContent = 'Fin';
+      updateRunningClass();
+      updateView();
+    }
+
+    function tick() {
+      const remaining = Math.max(0, state.currentMs - (Date.now() - state.currentStart));
+      if (remaining <= 0) {
+        const sections = parseSections();
+        if (state.currentIndex < sections.length - 1) {
+          state.currentIndex += 1;
+          state.currentMs = getSectionMs(state.currentIndex);
+          state.currentStart = Date.now();
+          if (state.currentMs <= 0) { finishSession(); return; }
+        } else { finishSession(); return; }
+      }
+      updateView();
+    }
+
+    /* ── Persistence ── */
+    function persist() {
+      localStorage.setItem('demo-timer-simple', JSON.stringify({
+        name: el.sessionName.value,
+        target: el.targetInput.value,
+        timerScale: el.timerScale.value,
+        sectionScale: el.sectionScale.value,
+        labelScale: el.labelScale.value,
+        barHeight: el.barHeight.value,
+        colorTimer: el.colorTimer.value,
+        colorSection: el.colorSection.value,
+        colorBar: el.colorBar.value,
+        colorDanger: el.colorDanger.value,
+        sections: parseSections()
+      }));
+    }
+
+    function loadStored() {
+      const raw = localStorage.getItem('demo-timer-simple');
+      if (!raw) { applyDefault(); return; }
+      try {
+        const cfg = JSON.parse(raw);
+        el.sessionName.value = cfg.name || 'Demo';
+        el.targetInput.value = Number(cfg.target) || 30;
+        el.timerScale.value = Number(cfg.timerScale) || 1;
+        el.sectionScale.value = Number(cfg.sectionScale) || 1;
+        el.labelScale.value = Number(cfg.labelScale) || 1;
+        el.barHeight.value = Number(cfg.barHeight) || 6;
+        el.colorTimer.value = cfg.colorTimer || '#ffffff';
+        el.colorSection.value = cfg.colorSection || '#ffffff';
+        el.colorBar.value = cfg.colorBar || '#ffffff';
+        el.colorDanger.value = cfg.colorDanger || '#e84040';
+        const sec = Array.isArray(cfg.sections) && cfg.sections.length
+          ? cfg.sections
+          : [{ name: 'Introducción', value: 8 }, { name: 'Bloque técnico', value: 15 }, { name: 'Cierre', value: 7 }];
+        el.container.innerHTML = '';
+        sec.forEach((s) => el.container.appendChild(buildSectionRow(s.name || 'Sección', s.value ?? s.minutes ?? 5, s.unit || 'min')));
+        ensureSectionExists();
+        renumberRows();
+      } catch (_e) {
+        applyDefault();
+        return;
+      }
+      applyCSSVars();
+      updateView();
+    }
+
+    function applyDefault() {
+      el.container.innerHTML = '';
+      el.container.appendChild(buildSectionRow('Introducción', 6));
+      el.container.appendChild(buildSectionRow('Demo', 15));
+      el.container.appendChild(buildSectionRow('Cierre', 9));
+      el.targetInput.value = 30;
+      el.sessionName.value = 'Demo';
+      renumberRows();
+      persist();
+      updateView();
+    }
+
+    el.startBtn.addEventListener('click', () => { state.running ? pauseTimer() : startTimer(); });
+    el.resetBtn.addEventListener('click', resetTimer);
+    el.nextBtn.addEventListener('click', nextSection);
+    el.addSection.addEventListener('click', () => {
+      el.container.appendChild(buildSectionRow('Nueva sección', 5));
+      renumberRows();
+      persist();
+      resetTimer();
+    });
+    el.loadDefault.addEventListener('click', () => { applyDefault(); resetTimer(); });
+    el.targetInput.addEventListener('input', () => { updateView(); persist(); });
+    el.sessionName.addEventListener('input', () => { persist(); updateView(); });
+
+    document.addEventListener('click', (e) => {
+      const button = e.target.closest('button');
+      if (!button || button.disabled) return;
+      pulsePress(button);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      const tag = e.target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.key === ' ') { e.preventDefault(); el.startBtn.click(); }
+      if (e.key.toLowerCase() === 'n') { e.preventDefault(); el.nextBtn.click(); }
+      if (e.key.toLowerCase() === 'r') { e.preventDefault(); el.resetBtn.click(); }
+    });
+
+    loadStored();
+    resetTimer();
+    syncSeoForRuntime();
+  </script>
+</body>
+</html>
