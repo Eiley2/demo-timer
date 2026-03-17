@@ -1142,27 +1142,47 @@
 
     /* ── Timeline ── */
     function buildTimeline(sections) {
-      el.timeline.innerHTML = '';
-      el.timelineLabels.innerHTML = '';
-      sections.forEach((s, i) => {
-        const seg = document.createElement('div');
-        seg.className = 'timeline-seg';
-        seg.style.flexGrow = sectionToMs(s) || 500;
-        seg.style.setProperty('--i', i);
-        seg.innerHTML = '<div class="fill"></div>';
-        el.timeline.appendChild(seg);
+      const currentSegs = Array.from(el.timeline.children);
+      const currentLabels = Array.from(el.timelineLabels.children);
+      const needed = sections.length;
 
-        const label = document.createElement('span');
+      if (currentSegs.length > needed) {
+        currentSegs.slice(needed).forEach((seg) => seg.remove());
+      }
+      if (currentLabels.length > needed) {
+        currentLabels.slice(needed).forEach((label) => label.remove());
+      }
+
+      sections.forEach((s, i) => {
+        let seg = el.timeline.children[i];
+        if (!seg) {
+          seg = document.createElement('div');
+          seg.className = 'timeline-seg';
+          seg.innerHTML = '<div class="fill"></div>';
+          el.timeline.appendChild(seg);
+        }
+
+        let label = el.timelineLabels.children[i];
+        if (!label) {
+          label = document.createElement('span');
+          label.dataset.index = i;
+          el.timelineLabels.appendChild(label);
+        }
+
+        const weight = sectionToMs(s) || 500;
+        seg.style.flexGrow = weight;
+        seg.style.setProperty('--i', i);
+
         label.textContent = s.name;
         label.dataset.name = s.name;
         label.dataset.index = i;
-        label.style.flexGrow = sectionToMs(s) || 500;
+        label.style.flexGrow = weight;
         label.style.setProperty('--i', i);
-        el.timelineLabels.appendChild(label);
       });
     }
 
-    function updateTimeline(currentIndex, segmentProgress) {
+    function updateTimeline(sections, currentIndex, segmentProgress) {
+      buildTimeline(sections);
       el.timeline.querySelectorAll('.timeline-seg').forEach((seg, i) => {
         const fill = seg.querySelector('.fill');
         seg.classList.toggle('done', i < currentIndex);
@@ -1174,6 +1194,7 @@
       const count = labels.length;
       const compact = count > 5;
       labels.forEach((label, i) => {
+        const name = sections[i]?.name || '';
         const isActive = i === currentIndex;
         const isNear = Math.abs(i - currentIndex) <= 1;
         label.classList.toggle('active', isActive);
@@ -1181,7 +1202,7 @@
         if (compact) {
           label.textContent = isNear ? label.dataset.name : (i + 1);
         } else {
-          label.textContent = label.dataset.name;
+          label.textContent = name;
         }
       });
     }
@@ -1226,7 +1247,7 @@
         el.displayPanel.classList.remove('danger');
         state.lastSectionIndex = -1;
         el.totalTimer.dataset.valueMs = '0';
-        updateTimeline(sections.length, 0);
+        updateTimeline(sections, sections.length, 0);
         updateRunningClass();
         return;
       }
@@ -1255,7 +1276,7 @@
 
       const sectionTotal = getSectionMs(state.currentIndex) || 1;
       const usedPct = (1 - nowRemainingCurrent / sectionTotal) * 100;
-      updateTimeline(state.currentIndex, usedPct);
+      updateTimeline(sections, state.currentIndex, usedPct);
 
       const targetMs = target * 60000;
       el.displayPanel.classList.toggle('danger', targetMs > 0 && totalRemaining > targetMs);
