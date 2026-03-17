@@ -169,45 +169,80 @@
     /* ── Top bar ── */
     .bar-area {
       width: 100%;
-      padding: 24px 120px 0 32px;
+      padding: 24px 32px 0;
       opacity: 0;
       animation: fadeRise 0.62s var(--ease-out-expo) forwards;
       animation-delay: 80ms;
-      position: relative;
     }
 
     .timeline {
-      display: flex;
+      position: relative;
       width: 100%;
       height: calc(var(--bar-height) * 1px);
-      gap: 8px;
+      background: #050505;
+      border-radius: 999px;
       transition: height 0.2s var(--ease-out-quart);
       overflow: hidden;
+    }
+
+    .timeline-track,
+    .timeline-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+    }
+
+    .timeline-track {
+      background: #111214;
+      overflow: hidden;
+    }
+
+    .timeline-progress {
+      height: 100%;
+      width: 0%;
+      background: color-mix(in srgb, var(--color-bar) 78%, #000000);
+      border-radius: inherit;
+      transition: width 0.18s linear;
+      transform-origin: left;
+    }
+
+    .timeline-overlay {
+      display: flex;
+      gap: 0;
+      pointer-events: none;
     }
 
     .timeline-seg {
       flex-grow: 1;
       flex-basis: 0;
       min-width: 0;
-      background: rgba(255,255,255,0.12);
+      background: transparent;
+      border-left: 8px solid #0b0d10;
       position: relative;
       overflow: hidden;
-      border-radius: 3px;
+      border-radius: 0;
       opacity: 0;
       transform: translateY(6px);
       animation: segmentIn 0.42s var(--ease-out-quart) forwards;
       animation-delay: calc(var(--i, 0) * 55ms);
+      transition: background-color 0.2s var(--ease-out-quart), box-shadow 0.2s var(--ease-out-quart), border-color 0.2s var(--ease-out-quart);
     }
 
-    .timeline-seg.done { background: rgba(255,255,255,0.25); }
+    .timeline-seg:first-child {
+      border-left: none;
+      border-top-left-radius: inherit;
+      border-bottom-left-radius: inherit;
+    }
 
-    .timeline-seg .fill {
-      position: absolute;
-      inset: 0;
-      width: 0%;
-      background: color-mix(in srgb, var(--color-bar) 60%, transparent);
-      transition: width 0.18s linear;
-      transform-origin: left;
+    .timeline-seg:last-child {
+      border-top-right-radius: inherit;
+      border-bottom-right-radius: inherit;
+    }
+
+    .timeline-seg.done { background: #26323d; }
+
+    .timeline-seg.active {
+      box-shadow: inset 0 0 0 1px #1a1c20;
     }
 
     .timeline-labels {
@@ -242,12 +277,15 @@
     /* ── Center: timer ── */
     .timer-area {
       flex: 1;
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 24px;
+      padding: clamp(28px, 5vh, 56px) 32px clamp(36px, 7vh, 72px);
       min-height: 0;
       opacity: 0;
       animation: fadeRise 0.68s var(--ease-out-quart) forwards;
@@ -266,13 +304,25 @@
     }
 
     #totalTimerWrapper {
-      display: inline-block;
+      position: relative;
+      display: inline-grid;
+      font-size: calc(clamp(4rem, 15vw, 12rem) * var(--timer-scale));
+      line-height: 1;
+      grid-template-columns: 1.1ch auto 1.1ch;
+      align-items: baseline;
       transform: translateZ(0);
     }
 
+    #totalTimerWrapper::after {
+      content: '\00a0';
+      grid-column: 3;
+      visibility: hidden;
+    }
+
+    #totalTimerSign,
     #totalTimer {
       font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-      font-size: calc(clamp(4rem, 15vw, 12rem) * var(--timer-scale));
+      font-size: 1em;
       font-weight: 200;
       line-height: 1;
       letter-spacing: -0.02em;
@@ -284,16 +334,25 @@
       animation-delay: 280ms;
     }
 
+    #totalTimerSign {
+      grid-column: 1;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    #totalTimer { grid-column: 2; }
+
     .alerting #totalTimerWrapper {
       animation: timerAlertBlink 0.95s var(--ease-out-quart) infinite;
     }
 
-    .alerting #totalTimer {
+    .alerting #totalTimer,
+    .alerting #totalTimerSign {
       color: var(--color-danger);
     }
 
     .section-context {
-      margin-top: 14px;
+      margin-top: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -302,6 +361,14 @@
       opacity: 0;
       animation: fadeRise 0.5s var(--ease-out-quart) both;
       animation-delay: 360ms;
+      transition: opacity 0.24s var(--ease-out-quart), transform 0.24s var(--ease-out-quart), visibility 0.24s var(--ease-out-quart);
+    }
+
+    .overtime .section-context {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-6px);
+      pointer-events: none;
     }
 
     .section-now {
@@ -330,9 +397,47 @@
     .done-label {
       font-size: 0.85rem;
       opacity: 0.3;
-      margin-top: 10px;
+      margin-top: 8px;
       min-height: 1.2em;
     }
+
+    @keyframes overtimePulse {
+      0%, 100% { opacity: 0.08; }
+      50% { opacity: 0.16; }
+    }
+
+    .overtime #totalTimerWrapper {
+      position: relative;
+    }
+
+    .overtime #totalTimerWrapper::before {
+      content: '';
+      position: absolute;
+      inset: -8px -28px;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--color-danger) 20%, transparent);
+      background: var(--color-danger);
+      opacity: 0.1;
+      animation: overtimePulse 2.4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .overtime #totalTimer,
+    .overtime #totalTimerSign {
+      color: var(--color-danger);
+    }
+
+    .overtime-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-danger);
+      opacity: 0;
+      margin-top: 6px;
+      transition: opacity 0.3s var(--ease-out-quart);
+    }
+
+    .overtime .overtime-label { opacity: 0.7; }
 
     .section-transition {
       animation: sectionTransition 0.38s var(--ease-out-quart) both;
@@ -343,9 +448,10 @@
     }
 
     /* ── Danger ── */
-    .danger #totalTimer { color: var(--color-danger); }
-    .danger .timeline-seg .fill { background: color-mix(in srgb, var(--color-danger) 65%, transparent); }
-    .danger .timeline-seg.done { background: color-mix(in srgb, var(--color-danger) 30%, transparent); }
+    .danger #totalTimer,
+    .danger #totalTimerSign { color: var(--color-danger); }
+    .danger .timeline-progress { background: color-mix(in srgb, var(--color-danger) 82%, #140303); }
+    .danger .timeline-seg.done { background: #311518; }
 
     .is-running .section-context,
     .is-running .section-now {
@@ -353,13 +459,13 @@
       transition: color 0.2s var(--ease-out-quart);
     }
 
-    .is-running .timeline-seg .fill { transition: width 0.18s linear, transform 0.18s var(--ease-out-quart); }
+    .is-running .timeline-progress { transition: width 0.18s linear, transform 0.18s var(--ease-out-quart); }
 
     /* ── Controls ── */
     .actions {
       display: flex;
       gap: 6px;
-      margin-top: 24px;
+      margin-top: 18px;
       opacity: 0;
       animation: fadeRise 0.5s var(--ease-out-quart) both;
       animation-delay: 430ms;
@@ -415,22 +521,22 @@
     .actions button:disabled { opacity: 0.15; pointer-events: none; }
 
     .team-btn {
-      position: absolute;
-      top: 18px;
-      right: 32px;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
       z-index: 13;
-      min-height: 38px;
+      min-height: 36px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       padding: 0 14px 0 11px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.14);
       background: rgba(255,255,255,0.04);
       backdrop-filter: blur(10px);
-      color: rgba(255,255,255,0.84);
+      color: rgba(255,255,255,0.5);
       cursor: pointer;
-      transition: transform 120ms var(--ease-out-quart), border-color 160ms var(--ease-out-quart), color 160ms var(--ease-out-quart), background-color 160ms var(--ease-out-quart);
+      transition: transform 120ms var(--ease-out-quart), border-color 160ms var(--ease-out-quart), color 160ms var(--ease-out-quart), background-color 160ms var(--ease-out-quart), opacity 220ms var(--ease-out-quart);
     }
 
     .team-btn:hover,
@@ -463,73 +569,72 @@
 
     .team-panel {
       position: fixed;
-      top: 68px;
-      right: 32px;
-      width: min(360px, calc(100vw - 28px));
-      z-index: 12;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(7,7,7,0.92);
+      bottom: 66px;
+      right: 20px;
+      width: min(320px, calc(100vw - 40px));
+      z-index: 14;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(10,10,10,0.94);
       backdrop-filter: blur(18px);
-      padding: 14px;
-      border-radius: 18px;
+      padding: 16px;
+      border-radius: 14px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.42);
+      gap: 0;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.35), 0 24px 60px rgba(0,0,0,0.42);
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
     }
+
+    .team-panel::-webkit-scrollbar { width: 3px; }
+    .team-panel::-webkit-scrollbar-track { background: transparent; }
+    .team-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    .team-panel { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent; }
 
     .team-panel.hidden { display: none; }
 
     .team-panel-header {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
     }
 
     .team-panel-title {
       font-size: 0.68rem;
-      letter-spacing: 0.16em;
-      opacity: 0.56;
+      letter-spacing: 0.14em;
+      opacity: 0.5;
       text-transform: uppercase;
     }
 
-    .team-panel-subtitle {
-      margin-top: 6px;
-      font-size: 0.78rem;
-      line-height: 1.45;
-      color: rgba(255,255,255,0.68);
-      max-width: 28ch;
-    }
-
     .team-close-btn {
-      width: 34px;
-      height: 34px;
+      width: 28px;
+      height: 28px;
       flex: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.58);
+      border: none;
+      background: none;
+      color: rgba(255,255,255,0.35);
       cursor: pointer;
-      transition: border-color 160ms var(--ease-out-quart), color 160ms var(--ease-out-quart), background-color 160ms var(--ease-out-quart), transform 120ms var(--ease-out-quart);
+      transition: color 160ms var(--ease-out-quart), transform 120ms var(--ease-out-quart);
     }
 
     .team-close-btn:hover {
-      border-color: rgba(255,255,255,0.24);
-      background: rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.92);
+      color: rgba(255,255,255,0.8);
     }
 
     .team-close-btn:active {
-      transform: scale(0.97);
+      transform: scale(0.93);
     }
 
     .team-close-btn svg {
-      width: 12px;
-      height: 12px;
+      width: 13px;
+      height: 13px;
       fill: none;
       stroke: currentColor;
       stroke-width: 1.8;
@@ -537,144 +642,210 @@
     }
 
     .team-panel-section {
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      background: rgba(255,255,255,0.03);
-      padding: 11px 12px;
+      border: none;
+      border-radius: 0;
+      background: none;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
+    .team-panel-section:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
     .team-section-title {
-      font-size: 0.62rem;
-      letter-spacing: 0.14em;
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.46);
+      color: rgba(255,255,255,0.36);
     }
 
     .team-panel input[type='text'],
     .room-link-field {
       width: 100%;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 10px;
-      padding: 10px 12px;
-      background: rgba(255,255,255,0.04);
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      border-radius: 0;
+      padding: 8px 0;
+      background: none;
       color: #fff;
       font: inherit;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
     }
 
     .team-panel input[type='text']:focus,
     .room-link-field:focus {
-      border-color: rgba(255,255,255,0.22);
+      border-bottom-color: rgba(255,255,255,0.3);
     }
 
     .team-row {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 4px;
       align-items: stretch;
     }
 
     .team-row label {
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      opacity: 0.5;
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      opacity: 0.4;
       display: block;
       text-transform: uppercase;
     }
 
-    .team-actions {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .team-actions button {
-      min-height: 38px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.03);
-      color: rgba(255,255,255,0.82);
-      font-size: 0.66rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      padding: 0 10px;
-    }
-
-    .team-actions button:hover {
-      border-color: rgba(255,255,255,0.22);
-      background: rgba(255,255,255,0.07);
-      color: #fff;
-    }
-
-    .team-actions button:last-child {
-      grid-column: 1 / -1;
-    }
-
     .team-members {
-      min-height: 88px;
-      max-height: 150px;
-      overflow: auto;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-      padding: 4px;
-      background: rgba(0,0,0,0.18);
+      max-height: 140px;
+      overflow-y: auto;
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      background: none;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
     }
+
+    .team-members::-webkit-scrollbar { width: 2px; }
+    .team-members::-webkit-scrollbar-track { background: transparent; }
+    .team-members::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+    .team-members { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent; }
 
     .team-member {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      padding: 9px 10px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.03);
-      font-size: 0.8rem;
+      padding: 7px 0;
+      border-radius: 0;
+      background: none;
+      font-size: 0.78rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
     }
+
+    .team-member:last-child { border-bottom: none; }
 
     .team-member-name {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
       flex: 1;
-      color: rgba(255,255,255,0.88);
+      color: rgba(255,255,255,0.78);
     }
 
     .team-member-meta {
       flex: none;
-      padding: 4px 7px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.5);
+      padding: 0;
+      border-radius: 0;
+      background: none;
+      color: rgba(255,255,255,0.3);
       text-transform: uppercase;
+      font-size: 0.55rem;
+      letter-spacing: 0.1em;
+    }
+
+    .team-primary-btn {
+      width: 100%;
+      min-height: 36px;
+      border-radius: 7px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.8);
+      font: inherit;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 160ms var(--ease-out-quart), color 160ms var(--ease-out-quart), background-color 160ms var(--ease-out-quart);
+    }
+
+    .team-primary-btn:hover {
+      border-color: rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+
+    .team-hint {
+      font-size: 0.68rem;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.28);
+    }
+
+    .team-live-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .team-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(80,200,120,0.8);
+      flex: none;
+    }
+
+    .team-live-label {
       font-size: 0.6rem;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .team-link-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .team-link-row .room-link-field {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .team-icon-btn {
+      flex: none;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: none;
+      color: rgba(255,255,255,0.45);
+      cursor: pointer;
+      transition: border-color 160ms var(--ease-out-quart), color 160ms var(--ease-out-quart);
+    }
+
+    .team-icon-btn:hover {
+      border-color: rgba(255,255,255,0.22);
+      color: rgba(255,255,255,0.85);
+    }
+
+    .team-icon-btn:disabled {
+      opacity: 0.25;
+      pointer-events: none;
     }
 
     .team-empty {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 78px;
-      padding: 12px;
+      padding: 10px 0;
       text-align: center;
-      color: rgba(255,255,255,0.42);
-      font-size: 0.74rem;
+      color: rgba(255,255,255,0.22);
+      font-size: 0.7rem;
       line-height: 1.5;
     }
 
     .team-status {
       display: none;
-      padding: 8px 10px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.05);
-      font-size: 0.72rem;
-      color: rgba(255,255,255,0.7);
+      padding: 0;
+      border-radius: 0;
+      background: none;
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.4);
       line-height: 1.45;
     }
 
@@ -686,17 +857,35 @@
       gap: 8px;
     }
 
-    .team-permissions.hidden { display: none; }
-
     .team-permissions label {
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       display: flex;
       align-items: center;
       gap: 8px;
-      color: rgba(255,255,255,0.82);
+      color: rgba(255,255,255,0.65);
       text-transform: none;
       margin: 0;
       letter-spacing: 0;
+    }
+
+    .team-leave-btn {
+      width: 100%;
+      min-height: 32px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.07);
+      background: none;
+      color: rgba(255,255,255,0.3);
+      font: inherit;
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 160ms var(--ease-out-quart), color 160ms var(--ease-out-quart);
+    }
+
+    .team-leave-btn:hover {
+      border-color: rgba(228,64,64,0.35);
+      color: var(--color-danger);
     }
 
     .actions button.primary {
@@ -740,6 +929,10 @@
     }
 
     @media (max-width: 860px) {
+      .timer-area {
+        padding: 24px 20px 34px;
+      }
+
       .config {
         grid-template-columns: 1fr;
         max-width: 420px;
@@ -750,23 +943,23 @@
       }
 
       .bar-area {
-        padding-right: 32px;
+        padding: 16px 20px 0;
       }
 
       .team-btn {
-        top: 14px;
-        right: 20px;
-        width: 38px;
-        padding: 0;
-        justify-content: center;
+        bottom: 16px;
+        right: 16px;
+        min-height: 34px;
+        padding: 0 12px 0 9px;
       }
 
       .team-btn__label { display: none; }
 
       .team-panel {
-        top: 56px;
-        right: 20px;
-        width: min(360px, calc(100vw - 40px));
+        bottom: 60px;
+        right: 16px;
+        left: 16px;
+        width: auto;
       }
     }
 
@@ -1193,7 +1386,7 @@
     .edit-toggle {
       position: fixed;
       bottom: 16px;
-      right: 16px;
+      left: 16px;
       background: none;
       border: none;
       color: rgba(255,255,255,0.1);
@@ -1221,10 +1414,7 @@
 
   <aside id="teamPanel" class="team-panel hidden" aria-live="polite" aria-labelledby="teamPanelTitle">
     <div class="team-panel-header">
-      <div>
-        <div id="teamPanelTitle" class="team-panel-title">Colaboración en vivo</div>
-        <p class="team-panel-subtitle">Comparte el timer, coordina cambios y deja que cada invitado vea el mismo estado.</p>
-      </div>
+      <div id="teamPanelTitle" class="team-panel-title">Colaboración</div>
       <button id="teamCloseBtn" class="team-close-btn" type="button" aria-label="Cerrar panel de colaboración">
         <svg viewBox="0 0 16 16" aria-hidden="true">
           <path d="M4 4l8 8"></path>
@@ -1232,54 +1422,79 @@
         </svg>
       </button>
     </div>
-    <div class="team-panel-section">
+
+    <!-- Idle: not connected -->
+    <div id="teamIdle" class="team-panel-section">
       <div class="team-row">
-        <label for="memberNameInput">Alias visible</label>
+        <label for="memberNameInput">Tu alias</label>
         <input id="memberNameInput" type="text" maxlength="32" placeholder="Ej: Norte 42" />
       </div>
+      <button id="shareRoomBtn" class="team-primary-btn" type="button">Crear sala</button>
+      <p class="team-hint">Crea una sala para compartir el timer en tiempo real con otros participantes.</p>
     </div>
-    <div class="team-panel-section">
-      <div class="team-actions">
-        <button id="shareRoomBtn" type="button">Crear sala</button>
-        <button id="copyRoomBtn" type="button" disabled>Copiar enlace</button>
-        <button id="leaveRoomBtn" type="button">Salir de la sala</button>
+
+    <!-- Connected: room active -->
+    <div id="teamLive" class="team-panel-section" style="display:none">
+      <div class="team-live-header">
+        <span id="teamLiveStatus" class="team-live-dot"></span>
+        <span class="team-live-label">Conectado</span>
       </div>
-      <input id="roomLinkField" class="room-link-field" type="text" readonly value="" aria-label="Link de la sesión" />
+      <div class="team-link-row">
+        <input id="roomLinkField" class="room-link-field" type="text" readonly value="" aria-label="Link de la sesión" />
+        <button id="copyRoomBtn" type="button" class="team-icon-btn" disabled aria-label="Copiar enlace">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="5.5" y="5.5" width="7" height="7" rx="1.5"></rect>
+            <path d="M5 10.5H4a1.5 1.5 0 0 1-1.5-1.5V4A1.5 1.5 0 0 1 4 2.5h5A1.5 1.5 0 0 1 10.5 4v1"></path>
+          </svg>
+        </button>
+      </div>
       <p id="teamStatus" class="team-status"></p>
     </div>
-    <div class="team-panel-section">
-      <div class="team-section-title">Participantes conectados</div>
+
+    <div id="teamMembersSection" class="team-panel-section" style="display:none">
+      <div class="team-section-title">Participantes</div>
       <div id="teamMembers" class="team-members" aria-label="Participantes conectados"></div>
     </div>
-    <div id="teamPermissionsPanel" class="team-panel-section team-permissions hidden" aria-label="Permisos de invitados">
+
+    <div id="teamPermissionsPanel" class="team-panel-section team-permissions" style="display:none" aria-label="Permisos de invitados">
       <div class="team-section-title">Permisos invitados</div>
-      <label><input id="permPlayInput" type="checkbox" checked>Invitados inician/pausan</label>
+      <label><input id="permPlayInput" type="checkbox" checked>Iniciar / pausar</label>
       <label><input id="permNextInput" type="checkbox" checked>Siguiente sección</label>
       <label><input id="permResetInput" type="checkbox" checked>Reiniciar</label>
-      <label><input id="permEditInput" type="checkbox" checked>Editar configuración</label>
+      <label><input id="permEditInput" type="checkbox" checked>Editar config</label>
+    </div>
+
+    <div id="teamLeaveSection" class="team-panel-section" style="display:none">
+      <button id="leaveRoomBtn" type="button" class="team-leave-btn">Salir de la sala</button>
     </div>
   </aside>
 
   <!-- Top: progress bar -->
   <header class="bar-area" role="banner" aria-label="Indicador de progreso por secciones">
-    <div class="timeline" id="timeline"></div>
+    <div class="timeline" id="timeline">
+      <div class="timeline-track" aria-hidden="true">
+        <div class="timeline-progress" id="timelineProgress"></div>
+      </div>
+      <div class="timeline-overlay" id="timelineOverlay" aria-hidden="true"></div>
+    </div>
     <div class="timeline-labels" id="timelineLabels"></div>
-    <button id="teamButton" class="team-btn" type="button" aria-label="Abrir panel de colaboración" aria-controls="teamPanel" aria-expanded="false">
-      <svg class="team-btn__icon" viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="4.2" cy="8" r="1.8"></circle>
-        <circle cx="11.8" cy="4.5" r="1.8"></circle>
-        <circle cx="11.8" cy="11.5" r="1.8"></circle>
-        <path d="M5.8 7.2 10 5.2"></path>
-        <path d="M5.8 8.8 10 10.8"></path>
-      </svg>
-      <span class="team-btn__label">Colaborar</span>
-    </button>
   </header>
+
+  <button id="teamButton" class="team-btn" type="button" aria-label="Abrir panel de colaboración" aria-controls="teamPanel" aria-expanded="false">
+    <svg class="team-btn__icon" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="4.2" cy="8" r="1.8"></circle>
+      <circle cx="11.8" cy="4.5" r="1.8"></circle>
+      <circle cx="11.8" cy="11.5" r="1.8"></circle>
+      <path d="M5.8 7.2 10 5.2"></path>
+      <path d="M5.8 8.8 10 10.8"></path>
+    </svg>
+    <span class="team-btn__label">Colaborar</span>
+  </button>
 
   <!-- Center: timer -->
   <main class="timer-area" id="displayPanel" role="main" aria-live="polite">
     <div class="session-name" id="sessionTitle">Demo</div>
-    <div id="totalTimerWrapper"><div id="totalTimer">30:00</div></div>
+    <div id="totalTimerWrapper"><span id="totalTimerSign" aria-hidden="true">&nbsp;</span><span id="totalTimer">30:00</span></div>
 
     <div class="section-context">
       <div class="section-now" id="sectionNow"></div>
@@ -1287,6 +1502,7 @@
     </div>
 
     <div class="done-label" id="doneText"></div>
+    <div class="overtime-label" id="overtimeLabel" aria-live="polite">Tiempo excedido</div>
 
     <div class="actions">
       <button id="startBtn" class="primary">Iniciar</button>
@@ -1423,14 +1639,18 @@
       resetBtn: document.getElementById('resetBtn'),
       addSection: document.getElementById('addSection'),
       loadDefault: document.getElementById('loadDefault'),
+      totalTimerSign: document.getElementById('totalTimerSign'),
       totalTimer: document.getElementById('totalTimer'),
       sessionTitle: document.getElementById('sessionTitle'),
       sectionNow: document.getElementById('sectionNow'),
       sectionPosition: document.getElementById('sectionPosition'),
       timeline: document.getElementById('timeline'),
+      timelineProgress: document.getElementById('timelineProgress'),
+      timelineOverlay: document.getElementById('timelineOverlay'),
       timelineLabels: document.getElementById('timelineLabels'),
       displayPanel: document.getElementById('displayPanel'),
       doneText: document.getElementById('doneText'),
+      overtimeLabel: document.getElementById('overtimeLabel'),
       configPanel: document.getElementById('configPanel'),
       editToggle: document.getElementById('editToggle'),
       totalSummary: document.getElementById('totalSummary'),
@@ -1456,7 +1676,13 @@
       permPlayInput: document.getElementById('permPlayInput'),
       permNextInput: document.getElementById('permNextInput'),
       permResetInput: document.getElementById('permResetInput'),
-      permEditInput: document.getElementById('permEditInput')
+      permEditInput: document.getElementById('permEditInput'),
+      teamIdle: document.getElementById('teamIdle'),
+      teamLive: document.getElementById('teamLive'),
+      teamLiveStatus: document.getElementById('teamLiveStatus'),
+      teamLiveLabel: document.querySelector('.team-live-label'),
+      teamMembersSection: document.getElementById('teamMembersSection'),
+      teamLeaveSection: document.getElementById('teamLeaveSection')
     };
 
     const state = {
@@ -1466,8 +1692,15 @@
       currentStart: 0,
       timer: null,
       completed: false,
+      zeroHold: false,
+      zeroHoldStart: 0,
+      zeroHoldElapsed: 0,
+      overtime: false,
+      overtimeStart: 0,
+      overtimeElapsed: 0,
       lastSectionIndex: -1
     };
+    const CLIENT_TICK_MS = 150;
 
     const ROOM_PARAM = 'room';
     const HOST_PARAM = 'h';
@@ -1551,7 +1784,7 @@
       if (!members.length) {
         const empty = document.createElement('div');
         empty.className = 'team-empty';
-        empty.textContent = 'Aún no hay participantes conectados.';
+        empty.textContent = 'Esperando participantes…';
         el.teamMembers.appendChild(empty);
         return;
       }
@@ -1584,6 +1817,29 @@
       if (!el.teamButton) return;
       el.teamButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       el.teamButton.setAttribute('aria-label', `${isOpen ? 'Ocultar' : 'Abrir'} panel de colaboración`);
+    }
+
+    function syncPanelState() {
+      const connected = collab.connected;
+      const connecting = !connected && !!collab.socket && collab.socket.readyState === WebSocket.CONNECTING;
+      const isHost = collab.role === 'host';
+
+      // Idle vs live
+      if (el.teamIdle) el.teamIdle.style.display = connected || connecting ? 'none' : '';
+      if (el.teamLive) el.teamLive.style.display = connected || connecting ? '' : 'none';
+      if (el.teamMembersSection) el.teamMembersSection.style.display = connected ? '' : 'none';
+      if (el.teamLeaveSection) el.teamLeaveSection.style.display = connected || connecting ? '' : 'none';
+      if (el.permissionsPanel) el.permissionsPanel.style.display = connected && isHost ? '' : 'none';
+
+      // Status dot
+      if (el.teamLiveStatus) {
+        el.teamLiveStatus.style.background = connecting
+          ? 'rgba(255,200,60,0.7)'
+          : 'rgba(80,200,120,0.8)';
+      }
+      if (el.teamLiveLabel) {
+        el.teamLiveLabel.textContent = connecting ? 'Conectando…' : 'Conectado';
+      }
     }
 
     function loadHostTokenForRoom(roomId) {
@@ -1630,12 +1886,6 @@
         el.startBtn.textContent = state.running ? 'Pausar' : 'Iniciar';
       }
 
-      if (isHost) {
-        el.permissionsPanel.classList.remove('hidden');
-      } else {
-        el.permissionsPanel.classList.add('hidden');
-      }
-
       if (el.permPlayInput) el.permPlayInput.checked = !!collab.permissions.guestCanPlay;
       if (el.permNextInput) el.permNextInput.checked = !!collab.permissions.guestCanNext;
       if (el.permResetInput) el.permResetInput.checked = !!collab.permissions.guestCanReset;
@@ -1656,6 +1906,8 @@
         row.querySelector('.unit-btn')?.toggleAttribute('disabled', collab.connected && !canEdit);
         row.querySelector('.remove')?.toggleAttribute('disabled', collab.connected && !canEdit);
       });
+
+      syncPanelState();
     }
 
     function updateRoomLink() {
@@ -1792,7 +2044,8 @@
       collab.manualClose = false;
       const socket = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/rooms/${encodeURIComponent(roomId)}/ws`);
       collab.socket = socket;
-      setTeamStatus('Conectando...');
+      setTeamStatus('Conectando…');
+      syncPanelState();
       socket.addEventListener('open', () => {
         if (collab.socket !== socket) return;
         sendToServer({
@@ -1871,6 +2124,9 @@
       Object.assign(state, {
         running: !!roomState.running,
         completed: !!roomState.completed,
+        overtime: !!roomState.overtime,
+        overtimeStart: Number(roomState.overtimeStart) || 0,
+        overtimeElapsed: Number(roomState.overtimeElapsed) || 0,
         currentIndex: Number(roomState.currentIndex) || 0,
         currentMs: Number(roomState.currentMs) || 0,
         currentStart: Number(roomState.currentStart) || 0,
@@ -1882,8 +2138,8 @@
         el.startBtn.textContent = 'Pausar';
       } else {
         exitRunningMode();
-        if (state.completed) el.startBtn.textContent = 'Terminar';
-        else el.startBtn.textContent = 'Iniciar';
+        if (state.completed && !state.overtime) el.startBtn.textContent = 'Terminar';
+        else el.startBtn.textContent = state.overtime ? 'Reanudar' : 'Iniciar';
       }
       el.nextBtn.disabled = state.currentIndex >= parseSections().length - 1;
       updateView();
@@ -1950,15 +2206,48 @@
       return unit === 'min' ? value * 60000 : value * 1000;
     }
 
-    const fmt = (ms) => {
-      const s = Math.max(0, Math.floor(ms / 1000));
+    function fmtSeconds(totalSeconds) {
+      const s = Math.max(0, Number(totalSeconds) || 0);
       const m = Math.floor(s / 60);
       const sec = s % 60;
       const h = Math.floor(m / 60);
       const mm = m % 60;
       if (h > 0) return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
       return `${String(mm).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-    };
+    }
+
+    const fmt = (ms) => fmtSeconds(Math.floor(Math.max(0, Number(ms) || 0) / 1000));
+
+    function fmtCountdown(ms) {
+      const safeMs = Math.max(0, Number(ms) || 0);
+      return fmtSeconds(safeMs <= 0 ? 0 : Math.ceil(safeMs / 1000));
+    }
+
+    function fmtOvertime(ms) {
+      const safeMs = Math.max(0, Number(ms) || 0);
+      // Once the timer goes negative, round up to the next second so it jumps
+      // directly from 00:00 to -00:01 instead of lingering on -00:00.
+      return fmtSeconds(Math.max(1, Math.ceil(safeMs / 1000)));
+    }
+
+    function setTimerDisplay(valueText, valueMs, { negative = false } = {}) {
+      if (el.totalTimerSign) el.totalTimerSign.innerHTML = negative ? '&minus;' : '&nbsp;';
+      el.totalTimer.textContent = valueText;
+      el.totalTimer.dataset.valueMs = String(Math.max(0, Number(valueMs) || 0));
+    }
+
+    function enterZeroHold(expiredElapsed = 0) {
+      const safeElapsed = Math.max(0, Number(expiredElapsed) || 0);
+      state.zeroHold = true;
+      state.zeroHoldStart = Date.now() - safeElapsed;
+      state.zeroHoldElapsed = safeElapsed;
+      state.currentMs = 0;
+      state.lastSectionIndex = state.currentIndex;
+      el.nextBtn.disabled = true;
+      el.startBtn.textContent = state.running ? 'Pausar' : 'Reanudar';
+      updateRunningClass();
+      updateView();
+    }
 
     function pulsePress(button) {
       if (!button) return;
@@ -2160,7 +2449,7 @@
 
     /* ── Timeline ── */
     function buildTimeline(sections) {
-      const currentSegs = Array.from(el.timeline.children);
+      const currentSegs = Array.from(el.timelineOverlay.children);
       const currentLabels = Array.from(el.timelineLabels.children);
       const needed = sections.length;
 
@@ -2172,12 +2461,11 @@
       }
 
       sections.forEach((s, i) => {
-        let seg = el.timeline.children[i];
+        let seg = el.timelineOverlay.children[i];
         if (!seg) {
           seg = document.createElement('div');
           seg.className = 'timeline-seg';
-          seg.innerHTML = '<div class="fill"></div>';
-          el.timeline.appendChild(seg);
+          el.timelineOverlay.appendChild(seg);
         }
 
         let label = el.timelineLabels.children[i];
@@ -2201,12 +2489,24 @@
 
     function updateTimeline(sections, currentIndex, segmentProgress) {
       buildTimeline(sections);
-      el.timeline.querySelectorAll('.timeline-seg').forEach((seg, i) => {
-        const fill = seg.querySelector('.fill');
+      let totalDuration = 0;
+      let elapsedDuration = 0;
+      sections.forEach((section, i) => {
+        const duration = sectionToMs(section);
+        totalDuration += duration;
+        if (i < currentIndex) elapsedDuration += duration;
+        else if (i === currentIndex) elapsedDuration += duration * (Math.max(0, Math.min(100, segmentProgress)) / 100);
+      });
+      if (currentIndex >= sections.length) elapsedDuration = totalDuration;
+      if (el.timelineProgress) {
+        el.timelineProgress.style.width = totalDuration > 0
+          ? `${Math.max(0, Math.min(100, (elapsedDuration / totalDuration) * 100))}%`
+          : '0%';
+      }
+
+      el.timelineOverlay.querySelectorAll('.timeline-seg').forEach((seg, i) => {
         seg.classList.toggle('done', i < currentIndex);
-        if (i < currentIndex) fill.style.width = '100%';
-        else if (i === currentIndex) fill.style.width = `${Math.max(0, Math.min(100, segmentProgress))}%`;
-        else fill.style.width = '0%';
+        seg.classList.toggle('active', i === currentIndex);
       });
       const labels = el.timelineLabels.querySelectorAll('span');
       const count = labels.length;
@@ -2250,42 +2550,97 @@
       const shouldAnimateNumbers = state.currentIndex === state.lastSectionIndex ? false : true;
 
       el.sessionTitle.textContent = el.sessionName.value || 'Demo';
-      if (shouldAnimateNumbers && Number.isFinite(previousTotal) && previousTotal !== totalRemaining) {
-        animateNumber(el.totalTimer, previousTotal, totalRemaining);
-      } else {
-        el.totalTimer.textContent = fmt(totalRemaining);
+
+      if (state.overtime) {
+        const overtimeMs = state.running ? Date.now() - state.overtimeStart : state.overtimeElapsed;
+        const overtimeIndex = sections.length ? Math.max(0, sections.length - 1) : -1;
+        const overtimeSection = overtimeIndex >= 0 ? sections[overtimeIndex] : null;
+        setTimerDisplay(fmtOvertime(overtimeMs), overtimeMs, { negative: true });
+
+        if (overtimeSection) {
+          el.sectionNow.textContent = overtimeSection.name;
+          const timeNode = document.createElement('span');
+          timeNode.className = 'time';
+          timeNode.textContent = fmt(0);
+          timeNode.dataset.valueMs = '0';
+          el.sectionNow.appendChild(timeNode);
+
+          const next = sections[overtimeIndex + 1];
+          el.sectionPosition.textContent =
+            `${overtimeIndex + 1} de ${sections.length}` +
+            (next ? ` — siguiente: ${next.name}` : ' — esta es la última sección');
+        } else {
+          el.sectionNow.textContent = '';
+          el.sectionPosition.textContent = '';
+        }
+        el.doneText.textContent = '';
+        el.displayPanel.classList.add('danger', 'overtime');
+        el.displayPanel.classList.remove('alerting');
+        updateTimeline(sections, overtimeIndex, 100);
+        updateRunningClass();
+        updateSummary();
+        return;
       }
-      el.totalTimer.dataset.valueMs = String(totalRemaining);
-      updateSummary();
+
+      if (state.zeroHold) {
+        const zeroIndex = sections.length ? Math.min(state.currentIndex, sections.length - 1) : -1;
+        const zeroSection = zeroIndex >= 0 ? sections[zeroIndex] : null;
+        setTimerDisplay(fmt(0), 0);
+
+        if (zeroSection) {
+          el.sectionNow.textContent = zeroSection.name;
+          const timeNode = document.createElement('span');
+          timeNode.className = 'time';
+          timeNode.textContent = fmt(0);
+          timeNode.dataset.valueMs = '0';
+          el.sectionNow.appendChild(timeNode);
+
+          const next = sections[zeroIndex + 1];
+          el.sectionPosition.textContent =
+            `${zeroIndex + 1} de ${sections.length}` +
+            (next ? ` — siguiente: ${next.name}` : ' — esta es la última sección');
+        } else {
+          el.sectionNow.textContent = '';
+          el.sectionPosition.textContent = '';
+        }
+        el.doneText.textContent = '';
+        el.displayPanel.classList.remove('danger', 'overtime', 'alerting');
+        updateTimeline(sections, zeroIndex, 100);
+        updateRunningClass();
+        updateSummary();
+        return;
+      }
 
       if (state.completed || sections.length === 0 || state.currentIndex >= sections.length) {
+        setTimerDisplay(fmt(0), 0);
         el.sectionNow.textContent = '';
         el.sectionPosition.textContent = '';
         el.doneText.textContent = state.completed ? 'Sesión terminada' : '';
-        el.displayPanel.classList.remove('danger');
-        el.displayPanel.classList.remove('alerting');
+        el.displayPanel.classList.remove('danger', 'overtime', 'alerting');
         state.lastSectionIndex = -1;
-        el.totalTimer.dataset.valueMs = '0';
         updateTimeline(sections, sections.length, 0);
         updateRunningClass();
         return;
       }
 
+      if (shouldAnimateNumbers && Number.isFinite(previousTotal) && previousTotal !== totalRemaining) {
+        animateNumber(el.totalTimer, previousTotal, totalRemaining, fmtCountdown);
+      } else {
+        el.totalTimer.textContent = fmtCountdown(totalRemaining);
+      }
+      setTimerDisplay(el.totalTimer.textContent, totalRemaining);
+      updateSummary();
+
       const current = sections[state.currentIndex];
       const next = sections[state.currentIndex + 1];
       const isSectionChange = state.currentIndex !== state.lastSectionIndex;
-      const previousSectionMs = Number(el.sectionNow.querySelector('.time')?.dataset.valueMs);
-      const sectionTimeText = fmt(nowRemainingCurrent);
+      const sectionTimeText = fmtCountdown(nowRemainingCurrent);
       state.lastSectionIndex = state.currentIndex;
 
       el.sectionNow.textContent = current.name;
       const timeNode = document.createElement('span');
       timeNode.className = 'time';
-      if (isSectionChange && Number.isFinite(previousSectionMs) && previousSectionMs !== nowRemainingCurrent) {
-        animateNumber(timeNode, previousSectionMs, nowRemainingCurrent, fmt, 300);
-      } else {
-        timeNode.textContent = sectionTimeText;
-      }
+      timeNode.textContent = sectionTimeText;
       timeNode.dataset.valueMs = String(nowRemainingCurrent);
       el.sectionNow.appendChild(timeNode);
 
@@ -2306,6 +2661,7 @@
       );
       if (isSectionChange) animateSectionSwap();
       el.doneText.textContent = '';
+      el.displayPanel.classList.remove('overtime');
       updateRunningClass();
     }
 
@@ -2316,6 +2672,26 @@
         return;
       }
       if (collab.roomId && sendAction('start')) return;
+      if (state.zeroHold && !state.running) {
+        state.zeroHoldStart = Date.now() - state.zeroHoldElapsed;
+        state.running = true;
+        el.startBtn.textContent = 'Pausar';
+        clearInterval(state.timer);
+        state.timer = setInterval(tick, CLIENT_TICK_MS);
+        updateRunningClass();
+        updateView();
+        return;
+      }
+      if (state.overtime && !state.running) {
+        state.overtimeStart = Date.now() - state.overtimeElapsed;
+        state.running = true;
+        el.startBtn.textContent = 'Pausar';
+        clearInterval(state.timer);
+        state.timer = setInterval(tick, CLIENT_TICK_MS);
+        updateRunningClass();
+        updateView();
+        return;
+      }
       if (state.completed) return;
       const sections = parseSections();
       if (sections.length === 0) return;
@@ -2329,7 +2705,7 @@
       enterRunningMode();
       buildTimeline(sections);
       clearInterval(state.timer);
-      state.timer = setInterval(tick, 150);
+      state.timer = setInterval(tick, CLIENT_TICK_MS);
       updateRunningClass();
       updateView();
     }
@@ -2341,7 +2717,13 @@
       }
       if (collab.roomId && sendAction('pause')) return;
       if (!state.running) return;
-      state.currentMs = Math.max(0, state.currentMs - (Date.now() - state.currentStart));
+      if (state.zeroHold) {
+        state.zeroHoldElapsed = Date.now() - state.zeroHoldStart;
+      } else if (state.overtime) {
+        state.overtimeElapsed = Date.now() - state.overtimeStart;
+      } else {
+        state.currentMs = Math.max(0, state.currentMs - (Date.now() - state.currentStart));
+      }
       state.running = false;
       clearInterval(state.timer);
       state.timer = null;
@@ -2361,6 +2743,12 @@
         timer: null,
         running: false,
         completed: false,
+        zeroHold: false,
+        zeroHoldStart: 0,
+        zeroHoldElapsed: 0,
+        overtime: false,
+        overtimeStart: 0,
+        overtimeElapsed: 0,
         currentIndex: 0,
         currentMs: getSectionMs(0),
         currentStart: 0,
@@ -2368,6 +2756,7 @@
       });
       el.startBtn.textContent = 'Iniciar';
       el.nextBtn.disabled = parseSections().length < 2;
+      el.displayPanel.classList.remove('overtime', 'danger');
       exitRunningMode();
       buildTimeline(parseSections());
       updateRunningClass();
@@ -2387,35 +2776,89 @@
         state.currentStart = state.running ? Date.now() : 0;
         updateView();
       } else {
-        finishSession();
+        enterZeroHold();
       }
     }
 
     function finishSession() {
-      clearInterval(state.timer);
-      state.timer = null;
-      state.running = false;
+      const expiredAt = state.zeroHold ? (state.zeroHoldStart + 1000) : (state.currentStart + state.currentMs);
       state.completed = true;
+      state.zeroHold = false;
+      state.zeroHoldStart = 0;
+      state.zeroHoldElapsed = 0;
+      state.overtime = true;
+      state.overtimeStart = expiredAt || Date.now();
+      state.overtimeElapsed = 0;
       state.currentIndex = parseSections().length;
       state.currentMs = 0;
       state.lastSectionIndex = -1;
       el.nextBtn.disabled = true;
-      el.startBtn.textContent = 'Terminar';
+      el.startBtn.textContent = 'Pausar';
       updateRunningClass();
       updateView();
     }
 
     function tick() {
-      const remaining = Math.max(0, state.currentMs - (Date.now() - state.currentStart));
-      if (remaining <= 0) {
-        const sections = parseSections();
-        if (state.currentIndex < sections.length - 1) {
-          state.currentIndex += 1;
-          state.currentMs = getSectionMs(state.currentIndex);
-          state.currentStart = Date.now();
-          if (state.currentMs <= 0) { finishSession(); return; }
-        } else { finishSession(); return; }
+      if (state.zeroHold) {
+        const zeroElapsed = Date.now() - state.zeroHoldStart;
+        if (zeroElapsed >= 1000) {
+          finishSession();
+          return;
+        }
+        updateView();
+        return;
       }
+      if (state.overtime) {
+        updateView();
+        return;
+      }
+      const sections = parseSections();
+      if (!sections.length) {
+        finishSession();
+        return;
+      }
+
+      let nextIndex = state.currentIndex;
+      let nextRemaining = Math.max(0, Number(state.currentMs) || 0);
+      let overshoot = Math.max(0, Date.now() - state.currentStart);
+
+      if (nextIndex < 0 || nextIndex >= sections.length) {
+        nextIndex = 0;
+        nextRemaining = getSectionMs(nextIndex);
+      }
+
+      while (nextIndex < sections.length) {
+        const currentDuration = getSectionMs(nextIndex);
+        if (currentDuration <= 0) {
+          if (nextIndex >= sections.length - 1) {
+            finishSession();
+            return;
+          }
+          nextIndex += 1;
+          nextRemaining = getSectionMs(nextIndex);
+          continue;
+        }
+
+        if (nextRemaining <= 0 || nextRemaining > currentDuration) {
+          nextRemaining = currentDuration;
+        }
+
+        if (overshoot < nextRemaining) break;
+
+        overshoot -= nextRemaining;
+        if (nextIndex >= sections.length - 1) {
+          state.currentIndex = nextIndex;
+          enterZeroHold(overshoot);
+          return;
+        }
+
+        nextIndex += 1;
+        nextRemaining = getSectionMs(nextIndex);
+      }
+
+      state.currentIndex = nextIndex;
+      state.currentMs = nextRemaining;
+      state.currentStart = Date.now() - overshoot;
       updateView();
     }
 
